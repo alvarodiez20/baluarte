@@ -1,0 +1,1798 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=1280">
+<meta name="description" content="Baluarte: juego de defensa de torres medieval. Campaña con historia, 7 torres, mejoras permanentes y asedio infinito.">
+<title>Baluarte</title>
+<style>
+:root {
+  --bg: #1b1710; --panel: #2a241a; --panel2: #352d20; --line: #4a4030; --text: #efe6cf; --muted: #b3a88e;
+  --gold: #ffd85a; --red: #ff7a6a; --green: #9be89a; --blue: #8fd3ff; --accent: #c9a227;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; overflow: hidden; }
+body { background: radial-gradient(ellipse at 50% 0%, #2c2518 0%, #1b1710 60%, #110e09 100%); }
+button { font-family: inherit; cursor: pointer; border: 1px solid var(--line); background: var(--panel2); color: var(--text); border-radius: 6px; padding: 8px 14px; font-size: 14px; transition: background .12s, transform .08s; }
+button:hover { background: #453b2a; }
+button:active { transform: translateY(1px); }
+button:disabled { opacity: .45; cursor: not-allowed; }
+button.primary { background: var(--accent); color: #1b1710; border-color: #e0bd4a; font-weight: 700; }
+button.primary:hover { background: #e0bd4a; }
+button.danger { border-color: #8a3a30; color: var(--red); }
+h1, h2, h3 { font-family: Georgia, 'Times New Roman', serif; margin: 0; }
+.screen { display: none; position: absolute; inset: 0; overflow: auto; }
+.screen.active { display: block; }
+.center { max-width: 1100px; margin: 0 auto; padding: 32px 24px; }
+/* ----- menú ----- */
+#s-menu .center { text-align: center; padding-top: 70px; }
+.title { font-size: 72px; letter-spacing: 6px; color: var(--gold); text-shadow: 0 4px 0 #6a4a10, 0 8px 24px rgba(0,0,0,.6); }
+.subtitle { color: var(--muted); font-style: italic; font-size: 18px; margin-top: 6px; margin-bottom: 40px; }
+.menu-btns { display: flex; flex-direction: column; gap: 10px; width: 300px; margin: 0 auto; }
+.menu-btns button { font-size: 17px; padding: 12px; }
+.menu-stats { color: var(--muted); margin-top: 30px; font-size: 14px; }
+.crest { width: 90px; height: 90px; margin: 0 auto 10px; }
+/* ----- cabeceras ----- */
+.top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+.top h2 { font-size: 30px; color: var(--gold); }
+.pill { background: var(--panel); border: 1px solid var(--line); border-radius: 20px; padding: 4px 12px; font-size: 13px; color: var(--muted); }
+.pill b { color: var(--gold); }
+/* ----- campaña ----- */
+.levels { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 12px; }
+.lvl { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px; cursor: pointer; position: relative; transition: transform .1s, border-color .1s; }
+.lvl:hover { transform: translateY(-2px); border-color: var(--accent); }
+.lvl.locked { opacity: .45; cursor: not-allowed; }
+.lvl .num { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+.lvl h3 { font-size: 20px; color: var(--text); margin: 2px 0 6px; }
+.lvl .stars { color: var(--gold); font-size: 18px; letter-spacing: 2px; }
+.lvl .stars .off { color: #4a4030; }
+.lvl .meta { font-size: 12px; color: var(--muted); margin-top: 6px; }
+.lvl .unlock { font-size: 12px; color: var(--green); margin-top: 4px; }
+.lvl.endless { border-color: #6a5a30; background: linear-gradient(135deg, #2a241a, #3a2a20); }
+.diffs { display: flex; gap: 8px; }
+.diffs button.sel { background: var(--accent); color: #1b1710; font-weight: 700; }
+/* ----- mejoras ----- */
+.metas { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }
+.meta { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px; display: flex; gap: 12px; align-items: center; }
+.meta .ico { font-size: 28px; width: 40px; text-align: center; }
+.meta .body { flex: 1; }
+.meta h3 { font-size: 17px; }
+.meta .per { font-size: 13px; color: var(--muted); }
+.meta .lv { display: flex; gap: 4px; margin: 6px 0; }
+.meta .lv i { display: block; width: 22px; height: 8px; border-radius: 3px; background: #4a4030; }
+.meta .lv i.on { background: var(--gold); }
+/* ----- logros y bestiario ----- */
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px; }
+.card.off { opacity: .4; }
+.card h3 { font-size: 16px; }
+.card p { margin: 4px 0 0; font-size: 13px; color: var(--muted); }
+.card .tag { font-size: 11px; color: var(--gold); float: right; }
+.card canvas { float: right; margin-left: 8px; }
+/* ----- partida ----- */
+#s-game { display: none; }
+#s-game.active { display: flex; align-items: flex-start; justify-content: center; padding: 10px; gap: 10px; overflow: auto; }
+#wrap { display: flex; gap: 10px; }
+#game { background: #000; border: 2px solid #4a4030; border-radius: 6px; cursor: crosshair; display: block; }
+#side { width: 300px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 10px; display: flex; flex-direction: column; gap: 10px; min-height: 604px; }
+.hud { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
+.hud div { background: var(--panel2); border-radius: 6px; padding: 6px 8px; text-align: center; }
+.hud .v { font-size: 20px; font-weight: 700; }
+.hud .l { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; }
+.hud .gold .v { color: var(--gold); } .hud .lives .v { color: var(--red); } .hud .wave .v { color: var(--blue); }
+.ctrl { display: flex; gap: 6px; }
+.ctrl button { flex: 1; padding: 6px; font-size: 13px; }
+.ctrl button.sel { background: var(--accent); color: #1b1710; font-weight: 700; }
+.section-title { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 4px; }
+.build { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.tb { background: var(--panel2); border: 1px solid var(--line); border-radius: 6px; padding: 10px 1px 2px; text-align: center; cursor: pointer; font-size: 10px; position: relative; }
+.tb:hover { border-color: var(--accent); }
+.tb.sel { border-color: var(--gold); background: #4a3f22; }
+.tb.locked { opacity: .35; cursor: not-allowed; }
+.tb.poor { color: var(--red); }
+.tb canvas { display: block; margin: 0 auto; }
+.tb .k { position: absolute; top: 1px; left: 3px; font-size: 9px; color: var(--muted); }
+.tb .c { color: var(--gold); }
+.tb.poor .c { color: var(--red); }
+#info { background: var(--panel2); border-radius: 6px; padding: 8px; font-size: 13px; flex: 1; overflow: auto; min-height: 150px; }
+#info h3 { font-size: 16px; color: var(--gold); }
+#info .desc { color: var(--muted); font-size: 12px; margin: 4px 0 6px; }
+#info .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 8px; font-size: 12px; margin-bottom: 6px; }
+#info .stats span { color: var(--muted); }
+#info .acts { display: flex; flex-direction: column; gap: 5px; }
+#info .acts button { text-align: left; padding: 6px 8px; font-size: 12px; }
+#info .acts button small { color: var(--gold); float: right; }
+#info .acts button.poor small { color: var(--red); }
+#info .spec-desc { font-size: 11px; color: var(--muted); display: block; margin-top: 2px; }
+.spells { display: flex; gap: 6px; }
+.sp { flex: 1; background: var(--panel2); border: 1px solid var(--line); border-radius: 6px; padding: 5px 4px; text-align: center; cursor: pointer; font-size: 11px; position: relative; overflow: hidden; }
+.sp.sel { border-color: var(--gold); background: #4a3f22; }
+.sp.locked { opacity: .35; cursor: not-allowed; }
+.sp .cd { position: absolute; left: 0; bottom: 0; height: 100%; background: rgba(255,255,255,.12); pointer-events: none; }
+.sp .ico { font-size: 18px; }
+#log { font-size: 12px; min-height: 52px; color: var(--muted); }
+#log div { line-height: 1.3; }
+.tip { font-size: 11px; color: var(--muted); }
+/* ----- modal ----- */
+#modal { display: none; position: absolute; inset: 0; background: rgba(0,0,0,.72); z-index: 20; align-items: center; justify-content: center; }
+#modal.active { display: flex; }
+.box { background: var(--panel); border: 1px solid var(--accent); border-radius: 12px; width: 640px; max-width: 95vw; max-height: 90vh; overflow: auto; padding: 26px 30px; box-shadow: 0 20px 60px rgba(0,0,0,.7); }
+.box h2 { color: var(--gold); font-size: 28px; margin-bottom: 4px; }
+.box .sub { color: var(--muted); font-style: italic; margin-bottom: 14px; }
+.box p { line-height: 1.55; font-size: 15px; }
+.box .btns { display: flex; gap: 10px; justify-content: flex-end; margin-top: 18px; flex-wrap: wrap; }
+.box .big-stars { font-size: 44px; color: var(--gold); letter-spacing: 6px; text-align: center; margin: 10px 0; }
+.box .big-stars .off { color: #4a4030; }
+.box ul { color: var(--muted); line-height: 1.6; }
+.box li b { color: var(--green); }
+.kv { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 12px; margin: 10px 0; font-size: 14px; }
+.kv span { color: var(--muted); }
+/* ----- toast ----- */
+#toasts { position: absolute; top: 14px; right: 14px; z-index: 30; display: flex; flex-direction: column; gap: 8px; }
+.toast { background: #3a2f1a; border: 1px solid var(--gold); border-radius: 8px; padding: 10px 14px; box-shadow: 0 6px 20px rgba(0,0,0,.5); animation: pop .3s ease; font-size: 14px; }
+.toast b { color: var(--gold); display: block; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; }
+@keyframes pop { from { transform: translateX(30px); opacity: 0 } to { transform: none; opacity: 1 } }
+.help { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px 20px; margin-top: 20px; font-size: 14px; line-height: 1.6; color: var(--muted); }
+.help b { color: var(--text); }
+kbd { background: #111; border: 1px solid #555; border-radius: 4px; padding: 1px 6px; font-size: 12px; color: #eee; }
+
+</style>
+</head>
+<body>
+<div id="app">
+  <!-- MENÚ -->
+  <div class="screen active" id="s-menu">
+    <div class="center">
+      <canvas class="crest" id="crest" width="90" height="90"></canvas>
+      <h1 class="title">BALUARTE</h1>
+      <div class="subtitle">Crónicas de la Guardia del Norte</div>
+      <div class="menu-btns">
+        <button class="primary" id="b-campaign">Campaña</button>
+        <button id="b-endless">Asedio infinito</button>
+        <button id="b-meta">Mejoras del reino</button>
+        <button id="b-ach">Logros</button>
+        <button id="b-codex">Bestiario</button>
+        <button id="b-sound">Sonido: activado</button>
+        <button class="danger" id="b-reset">Borrar progreso</button>
+      </div>
+      <div class="menu-stats" id="menu-stats"></div>
+      <div class="help" style="max-width:640px;margin:26px auto 0;text-align:left">
+        <b>Cómo se juega.</b> Los enemigos avanzan por el camino hacia tu muralla. Construye torres en las casillas libres para detenerlos antes de que crucen. Cada torre se puede mejorar dos veces y, al máximo, <b>especializar</b> en una de dos ramas. Gana <b>Gloria</b> con estrellas y logros para comprar mejoras permanentes.<br>
+        <kbd>1</kbd>–<kbd>7</kbd> elegir torre · <kbd>Q</kbd> <kbd>W</kbd> <kbd>E</kbd> hechizos · <kbd>Espacio</kbd> siguiente oleada · <kbd>P</kbd> pausa · <kbd>Esc</kbd> cancelar · <kbd>U</kbd> mejorar · <kbd>S</kbd> vender · <kbd>T</kbd> objetivo · <kbd>+</kbd>/<kbd>-</kbd> velocidad
+      </div>
+    </div>
+  </div>
+
+  <!-- CAMPAÑA -->
+  <div class="screen" id="s-campaign">
+    <div class="center">
+      <div class="top">
+        <h2>Campaña</h2>
+        <div style="display:flex;gap:10px;align-items:center">
+          <span class="pill" id="camp-stars"></span>
+          <div class="diffs" id="diffs"></div>
+          <button id="back-1">← Menú</button>
+        </div>
+      </div>
+      <div class="levels" id="levels"></div>
+    </div>
+  </div>
+
+  <!-- MEJORAS -->
+  <div class="screen" id="s-meta">
+    <div class="center">
+      <div class="top">
+        <h2>Mejoras del reino</h2>
+        <div style="display:flex;gap:10px;align-items:center">
+          <span class="pill">Gloria disponible: <b id="meta-gloria">0</b></span>
+          <button id="back-2">← Menú</button>
+        </div>
+      </div>
+      <p style="color:var(--muted);margin-top:0">La Gloria se obtiene con las estrellas de la campaña, los logros y cada 10 oleadas del Asedio infinito. Las mejoras son permanentes y se aplican en todas las partidas.</p>
+      <div class="metas" id="metas"></div>
+    </div>
+  </div>
+
+  <!-- LOGROS -->
+  <div class="screen" id="s-ach">
+    <div class="center">
+      <div class="top"><h2>Logros</h2><button id="back-3">← Menú</button></div>
+      <div class="cards" id="achs"></div>
+    </div>
+  </div>
+
+  <!-- BESTIARIO -->
+  <div class="screen" id="s-codex">
+    <div class="center">
+      <div class="top"><h2>Bestiario</h2><button id="back-4">← Menú</button></div>
+      <p style="color:var(--muted);margin-top:0">Los enemigos se registran la primera vez que los ves en combate.</p>
+      <div class="cards" id="codex"></div>
+      <h2 style="margin:26px 0 10px;color:var(--gold)">Torres</h2>
+      <div class="cards" id="codex-towers"></div>
+    </div>
+  </div>
+
+  <!-- PARTIDA -->
+  <div class="screen" id="s-game">
+    <div id="wrap">
+      <canvas id="game" width="960" height="600"></canvas>
+      <aside id="side">
+        <div class="hud">
+          <div class="gold"><div class="v" id="h-gold">0</div><div class="l">Oro</div></div>
+          <div class="lives"><div class="v" id="h-lives">0</div><div class="l">Vidas</div></div>
+          <div class="wave"><div class="v" id="h-wave">0</div><div class="l">Oleada</div></div>
+        </div>
+        <div class="ctrl">
+          <button class="primary" id="b-next" style="flex:2">Siguiente oleada</button>
+          <button id="sp1" class="sel">1×</button><button id="sp2">2×</button><button id="sp3">3×</button>
+        </div>
+        <div class="ctrl"><button id="b-pause">Pausa</button><button id="b-quit">Abandonar</button></div>
+        <div>
+          <div class="section-title">Construir</div>
+          <div class="build" id="build"></div>
+        </div>
+        <div>
+          <div class="section-title">Hechizos</div>
+          <div class="spells" id="spells"></div>
+        </div>
+        <div id="info"></div>
+        <div id="log"></div>
+      </aside>
+    </div>
+  </div>
+
+  <div id="modal"><div class="box" id="modal-box"></div></div>
+  <div id="toasts"></div>
+</div>
+
+<script>
+/* ==================== DATOS DEL JUEGO ==================== */
+const COLS = 24, ROWS = 15, TILE = 40;
+const W = COLS * TILE, H = ROWS * TILE;
+
+function mulberry32(a) {
+  return function () {
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+
+/* ---------- ENEMIGOS ---------- */
+const ENEMIES = {
+  goblin:      { name: 'Goblin', hp: 42, speed: 72, armor: 0, mres: 0, gold: 4, dmg: 1, r: 9, cost: 1, color: '#6cbf4a', shape: 'goblin',
+    lore: 'Pequeños, cobardes y numerosos. Un goblin solo es una molestia; cien goblins son una plaga.' },
+  lobo:        { name: 'Lobo de Umbría', hp: 58, speed: 135, armor: 0, mres: 0, gold: 5, dmg: 1, r: 9, cost: 1.5, color: '#8f8f9a', shape: 'lobo',
+    lore: 'Criados por los goblins en los bosques oscuros. Rápidos como el viento y siempre hambrientos.' },
+  orco:        { name: 'Orco', hp: 150, speed: 56, armor: 0.15, mres: 0, gold: 8, dmg: 1, r: 12, cost: 3, color: '#4f8a3a', shape: 'orco',
+    lore: 'Guerreros de las tribus del este. Llevan cuero endurecido y hachas melladas por cien batallas.' },
+  orco_pesado: { name: 'Orco acorazado', hp: 340, speed: 44, armor: 0.42, mres: 0, gold: 14, dmg: 2, r: 13, cost: 6, color: '#3f6d30', shape: 'orco_pesado',
+    lore: 'La guardia de élite de los señores orcos. Su armadura de hierro rechaza las flechas; la magia es su debilidad.' },
+  esqueleto:   { name: 'Esqueleto', hp: 95, speed: 66, armor: 0, mres: 0.5, gold: 6, dmg: 1, r: 10, cost: 2, color: '#e8e4d5', shape: 'esqueleto',
+    lore: 'Huesos animados por la nigromancia. La magia les afecta poco; el acero y la piedra los rompen bien.' },
+  chaman:      { name: 'Chamán goblin', hp: 130, speed: 54, armor: 0, mres: 0.2, gold: 12, dmg: 1, r: 11, cost: 5, color: '#a35bc7', shape: 'chaman', heal: 9,
+    lore: 'Sana a sus compañeros con cánticos guturales. Elimínalo primero o la horda no dejará de curarse.' },
+  murcielago:  { name: 'Murciélago gigante', hp: 48, speed: 125, armor: 0, mres: 0, gold: 5, dmg: 1, r: 9, cost: 2, color: '#5a4a6e', shape: 'murcielago', flying: true,
+    lore: 'Vuela por encima de las catapultas. Solo los arqueros, magos y ballestas pueden alcanzarlo.' },
+  gargola:     { name: 'Gárgola', hp: 280, speed: 70, armor: 0.3, mres: 0.1, gold: 14, dmg: 2, r: 12, cost: 6, color: '#6d6d7a', shape: 'gargola', flying: true,
+    lore: 'Piedra viva desprendida de las torres de Kel-Morath. Vuela lenta pero aguanta mucho castigo.' },
+  troll:       { name: 'Trol de las minas', hp: 760, speed: 40, armor: 0.25, mres: 0, gold: 26, dmg: 2, r: 15, cost: 12, color: '#7a6a4a', shape: 'troll', regen: 7,
+    lore: 'Regenera sus heridas a ojos vista. Hay que abatirlo deprisa o no lo abatirás nunca.' },
+  nigromante:  { name: 'Nigromante', hp: 230, speed: 50, armor: 0, mres: 0.4, gold: 16, dmg: 1, r: 11, cost: 7, color: '#3b2f5a', shape: 'nigromante', onDeath: 'esqueleto', onDeathN: 2,
+    lore: 'Al morir, su último aliento levanta a dos esqueletos de la tierra.' },
+  espectro:    { name: 'Espectro', hp: 190, speed: 92, armor: 0.75, mres: 0, gold: 14, dmg: 1, r: 11, cost: 7, color: '#9fd8e8', shape: 'espectro', flying: true,
+    lore: 'Casi inmune a las armas físicas. Solo la magia o los venenos alquímicos lo disipan.' },
+  jinete:      { name: 'Jinete de guerra', hp: 210, speed: 112, armor: 0.2, mres: 0, gold: 12, dmg: 1, r: 12, cost: 6, color: '#b5652a', shape: 'jinete',
+    lore: 'Caballería salvaje de las estepas. Rápida y resistente: la torre de hielo es tu mejor amiga.' },
+  ogro:        { name: 'Ogro', hp: 1300, speed: 42, armor: 0.3, mres: 0.1, gold: 42, dmg: 3, r: 17, cost: 20, color: '#8a5a3a', shape: 'ogro',
+    lore: 'Una montaña de músculo. Cada ogro que llega a la muralla se lleva tres vidas.' },
+  dragon_joven:{ name: 'Dragón joven', hp: 950, speed: 82, armor: 0.2, mres: 0.25, gold: 42, dmg: 3, r: 16, cost: 22, color: '#c43b2f', shape: 'dragon', flying: true,
+    lore: 'Crías del Dragón Anciano. Aún no escupen fuego, pero su piel ya es dura como la roca.' },
+  /* JEFES */
+  boss_zarg:    { name: 'Zarg, rey goblin', hp: 650, speed: 62, armor: 0.1, mres: 0, gold: 70, dmg: 10, r: 15, cost: 0, color: '#4c9a2e', shape: 'goblin', boss: true,
+    lore: 'El autoproclamado rey de los goblins. Robó su corona a un mercader muerto.' },
+  boss_colmillo:{ name: 'Colmillo, lobo alfa', hp: 1100, speed: 105, armor: 0.1, mres: 0, gold: 90, dmg: 10, r: 15, cost: 0, color: '#5a5a66', shape: 'lobo', boss: true,
+    lore: 'Un lobo tan grande como un caballo. Sus aullidos se oyen en tres provincias.' },
+  boss_grukk:   { name: 'Grukk, señor de la guerra', hp: 2600, speed: 50, armor: 0.38, mres: 0, gold: 140, dmg: 10, r: 17, cost: 0, color: '#2f5a24', shape: 'orco_pesado', boss: true,
+    lore: 'Unificó a las tribus orcas bajo un solo estandarte. Alguien le dio oro para hacerlo.' },
+  boss_sombra:  { name: 'Sombra de Vhaldrek', hp: 3200, speed: 60, armor: 0.1, mres: 0.6, gold: 180, dmg: 10, r: 15, cost: 0, color: '#2a1f4a', shape: 'nigromante', boss: true, summon: 'esqueleto', summonEvery: 6,
+    lore: 'Un eco del liche. No es él, pero levanta muertos como si lo fuera.' },
+  boss_reytroll:{ name: 'Rey Trol Gorm', hp: 5200, speed: 40, armor: 0.3, mres: 0.1, gold: 220, dmg: 10, r: 20, cost: 0, color: '#5f4f34', shape: 'troll', boss: true, regen: 22,
+    lore: 'Dormía bajo las minas desde antes de que existiera el reino. Alguien lo despertó.' },
+  boss_hidra:   { name: 'Hidra de Mordún', hp: 4800, speed: 55, armor: 0.2, mres: 0.3, gold: 240, dmg: 10, r: 19, cost: 0, color: '#3d7a5a', shape: 'ogro', boss: true, regen: 10,
+    lore: 'Tres cabezas, ningún cerebro. Se alimenta de todo lo que cae en la ciénaga.' },
+  boss_corvus:  { name: 'Almirante Corvus', hp: 5600, speed: 95, armor: 0.3, mres: 0.2, gold: 260, dmg: 10, r: 15, cost: 0, color: '#2b3a5a', shape: 'jinete', boss: true,
+    lore: 'Pirata, mercenario y traficante. Trajo la flota del Canciller al Puerto de Sal.' },
+  boss_dragon:  { name: 'Dragón Anciano Ashkar', hp: 9500, speed: 75, armor: 0.25, mres: 0.3, gold: 380, dmg: 10, r: 22, cost: 0, color: '#8f1f1f', shape: 'dragon', boss: true, flying: true,
+    lore: 'El último de los grandes dragones. Sus alas oscurecen el cielo de las Cumbres.' },
+  boss_canciller:{ name: 'Canciller Malaquías', hp: 8500, speed: 60, armor: 0.4, mres: 0.4, gold: 420, dmg: 10, r: 15, cost: 0, color: '#c9a227', shape: 'chaman', boss: true, heal: 30, summon: 'orco_pesado', summonEvery: 9,
+    lore: 'Consejero del rey durante veinte años. Vendió el reino a cambio de la inmortalidad.' },
+  boss_vhaldrek:{ name: 'Vhaldrek, el Liche', hp: 11000, speed: 48, armor: 0.2, mres: 0.5, gold: 600, dmg: 20, r: 22, cost: 0, color: '#1b1230', shape: 'nigromante', boss: true, summon: 'espectro', summonEvery: 7, regen: 15,
+    lore: 'El Corazón de la Sombra. Mientras él exista, ningún muerto descansará en Valdoria.' },
+};
+
+/* ---------- TORRES ---------- */
+/* dmgType: phys | magic ; target: ground | air | both */
+const TOWERS = {
+  arquero: { name: 'Torre de arqueros', key: '1', cost: 70, color: '#c9a86a', icon: 'arquero', dmgType: 'phys', target: 'both',
+    desc: 'Rápida y barata. Alcanza enemigos terrestres y voladores.',
+    levels: [
+      { dmg: 12, range: 115, rate: 1.7, cost: 0 },
+      { dmg: 20, range: 125, rate: 1.9, cost: 55 },
+      { dmg: 33, range: 135, rate: 2.1, cost: 90 },
+    ],
+    specs: [
+      { name: 'Arqueros élficos', cost: 170, desc: 'Gran alcance y cadencia. Disparan dos flechas.', mods: { dmg: 38, range: 175, rate: 2.6, multishot: 2 } },
+      { name: 'Cazadores', cost: 170, desc: 'Flechas pesadas: gran daño y 30% de crítico (x3).', mods: { dmg: 75, range: 145, rate: 1.7, crit: 0.3 } },
+    ] },
+  catapulta: { name: 'Catapulta', key: '2', cost: 120, color: '#8a6a3a', icon: 'catapulta', dmgType: 'phys', target: 'ground',
+    desc: 'Daño en área contra tropas terrestres. No alcanza voladores.',
+    levels: [
+      { dmg: 32, range: 140, rate: 0.5, splash: 45, cost: 0 },
+      { dmg: 58, range: 150, rate: 0.55, splash: 50, cost: 85 },
+      { dmg: 95, range: 160, rate: 0.6, splash: 55, cost: 130 },
+    ],
+    specs: [
+      { name: 'Trabuco', cost: 240, desc: 'Rocas enormes: daño devastador en gran área.', mods: { dmg: 220, range: 175, rate: 0.38, splash: 75 } },
+      { name: 'Fuego griego', cost: 240, desc: 'Proyectiles incendiarios que queman durante 3 s.', mods: { dmg: 95, range: 165, rate: 0.6, splash: 62, burn: 22 } },
+    ] },
+  mago: { name: 'Torre de magos', key: '3', cost: 110, color: '#7a4fc7', icon: 'mago', dmgType: 'magic', target: 'both',
+    desc: 'Daño mágico que ignora la armadura. Ideal contra acorazados.',
+    levels: [
+      { dmg: 30, range: 120, rate: 0.9, cost: 0 },
+      { dmg: 48, range: 130, rate: 0.95, cost: 75 },
+      { dmg: 80, range: 140, rate: 1.0, cost: 115 },
+    ],
+    specs: [
+      { name: 'Archimago', cost: 250, desc: 'Rayo encadenado que salta a 3 enemigos.', mods: { dmg: 95, range: 150, rate: 1.0, chain: 3 } },
+      { name: 'Piromante', cost: 250, desc: 'Bolas de fuego con daño mágico en área.', mods: { dmg: 130, range: 145, rate: 0.8, splash: 45 } },
+    ] },
+  hielo: { name: 'Torre de hielo', key: '4', cost: 90, color: '#6fc8e8', icon: 'hielo', dmgType: 'magic', target: 'both',
+    desc: 'Poco daño, pero ralentiza a los enemigos alcanzados.',
+    levels: [
+      { dmg: 9, range: 105, rate: 1.0, slow: 0.4, slowT: 2, cost: 0 },
+      { dmg: 15, range: 115, rate: 1.05, slow: 0.5, slowT: 2.2, cost: 65 },
+      { dmg: 24, range: 125, rate: 1.1, slow: 0.6, slowT: 2.5, cost: 95 },
+    ],
+    specs: [
+      { name: 'Ventisca', cost: 210, desc: 'Aura permanente: todo lo que entra se ralentiza un 55% y sufre daño continuo.', mods: { dmg: 14, range: 130, rate: 1, aura: true, slow: 0.55 } },
+      { name: 'Corazón de escarcha', cost: 210, desc: 'Cada disparo tiene un 30% de congelar 1,5 s.', mods: { dmg: 45, range: 130, rate: 1.1, slow: 0.6, slowT: 2.5, freeze: 0.3 } },
+    ] },
+  ballesta: { name: 'Ballesta pesada', key: '5', cost: 150, color: '#5a4a3a', icon: 'ballesta', dmgType: 'phys', target: 'both',
+    desc: 'Enorme alcance y daño. Perfora la mitad de la armadura.',
+    levels: [
+      { dmg: 95, range: 190, rate: 0.45, pierce: 0.5, cost: 0 },
+      { dmg: 165, range: 205, rate: 0.48, pierce: 0.5, cost: 105 },
+      { dmg: 270, range: 220, rate: 0.5, pierce: 0.6, cost: 160 },
+    ],
+    specs: [
+      { name: 'Ojo de halcón', cost: 300, desc: 'Alcance descomunal. Ignora toda la armadura.', mods: { dmg: 430, range: 290, rate: 0.5, pierce: 1 } },
+      { name: 'Ballesta de repetición', cost: 300, desc: 'Triplica la cadencia de disparo.', mods: { dmg: 190, range: 220, rate: 1.5, pierce: 0.6 } },
+    ] },
+  alquimista: { name: 'Alquimista', key: '6', cost: 130, color: '#5fbf7a', icon: 'alquimista', dmgType: 'magic', target: 'both',
+    desc: 'Frascos de veneno: daño continuo verdadero que ignora todas las defensas.',
+    levels: [
+      { dmg: 10, range: 115, rate: 0.8, splash: 30, poison: 12, poisonT: 4, cost: 0 },
+      { dmg: 16, range: 122, rate: 0.85, splash: 34, poison: 22, poisonT: 4, cost: 85 },
+      { dmg: 24, range: 130, rate: 0.9, splash: 40, poison: 36, poisonT: 4.5, cost: 125 },
+    ],
+    specs: [
+      { name: 'Plaga', cost: 260, desc: 'Nubes tóxicas enormes con veneno letal.', mods: { dmg: 24, range: 140, rate: 0.9, splash: 65, poison: 55, poisonT: 5 } },
+      { name: 'Ácido corrosivo', cost: 260, desc: 'Disuelve la armadura: los afectados reciben daño físico completo.', mods: { dmg: 70, range: 135, rate: 0.9, splash: 40, poison: 36, poisonT: 4.5, corrode: true } },
+    ] },
+  templo: { name: 'Templo de la Luz', key: '7', cost: 160, color: '#e8d27a', icon: 'templo', dmgType: 'none', target: 'none',
+    desc: 'No ataca. Bendice a las torres cercanas: +daño y +alcance.',
+    levels: [
+      { dmg: 0, range: 95, rate: 0, buffDmg: 0.15, buffRange: 0.08, cost: 0 },
+      { dmg: 0, range: 105, rate: 0, buffDmg: 0.28, buffRange: 0.14, cost: 110 },
+      { dmg: 0, range: 115, rate: 0, buffDmg: 0.42, buffRange: 0.2, cost: 160 },
+    ],
+    specs: [
+      { name: 'Santuario', cost: 280, desc: 'Al terminar cada oleada restaura 1 vida (hasta el máximo).', mods: { dmg: 0, range: 125, rate: 0, buffDmg: 0.45, buffRange: 0.22, healWave: 1 } },
+      { name: 'Tesorería', cost: 280, desc: 'Las torres bendecidas obtienen +25% de oro por baja.', mods: { dmg: 0, range: 125, rate: 0, buffDmg: 0.45, buffRange: 0.22, goldBuff: 0.25 } },
+    ] },
+};
+const TOWER_ORDER = ['arquero', 'catapulta', 'mago', 'hielo', 'ballesta', 'alquimista', 'templo'];
+
+/* ---------- HECHIZOS ---------- */
+const SPELLS = {
+  lluvia:  { name: 'Lluvia de flechas', key: 'Q', cd: 40, radius: 85, dmg: 160, type: 'phys', color: '#e8d8a0',
+    desc: 'Una lluvia de flechas cae en la zona elegida: 160 de daño físico.' },
+  escarcha:{ name: 'Tormenta helada', key: 'W', cd: 70, radius: 0, freeze: 3, color: '#9fe0ff',
+    desc: 'Congela a TODOS los enemigos del mapa durante 3 segundos.' },
+  meteoro: { name: 'Meteoro', key: 'E', cd: 90, radius: 110, dmg: 420, type: 'magic', burn: 40, color: '#ff7a3a',
+    desc: 'Un meteoro impacta en la zona: 420 de daño mágico y quema 3 s.' },
+};
+const SPELL_ORDER = ['lluvia', 'escarcha', 'meteoro'];
+
+/* ---------- MEJORAS PERMANENTES (GLORIA) ---------- */
+const META = [
+  { id: 'arsenal',   name: 'Arsenal real',      icon: '⚔', max: 3, per: '+6% daño de todas las torres', costs: [1, 2, 3] },
+  { id: 'vigia',     name: 'Vigías',            icon: '👁', max: 3, per: '+4% alcance de todas las torres', costs: [1, 2, 3] },
+  { id: 'tesoro',    name: 'Tesorería real',    icon: '💰', max: 3, per: '+45 de oro inicial', costs: [1, 2, 3] },
+  { id: 'muralla',   name: 'Muralla reforzada', icon: '🏰', max: 3, per: '+2 vidas iniciales', costs: [1, 2, 3] },
+  { id: 'ingenieros',name: 'Ingenieros',        icon: '🔧', per: '-5% coste de construcción', max: 3, costs: [2, 3, 4] },
+  { id: 'comercio',  name: 'Rutas comerciales', icon: '🐎', max: 3, per: '+8% oro por enemigo abatido', costs: [2, 3, 4] },
+  { id: 'hechiceria',name: 'Hechicería',        icon: '✨', max: 3, per: '-10% tiempo de recarga de hechizos', costs: [2, 3, 4] },
+  { id: 'veteranos', name: 'Veteranos',         icon: '🎖', max: 3, per: '-6% coste de mejoras y especializaciones', costs: [2, 3, 4] },
+  { id: 'botin',     name: 'Botín de guerra',   icon: '🏆', max: 3, per: '+15 de oro extra al terminar cada oleada', costs: [2, 3, 4] },
+  { id: 'herreria',  name: 'Herrería',          icon: '🔨', max: 2, per: '+10% de oro al vender torres', costs: [1, 2] },
+];
+
+/* ---------- LOGROS ---------- */
+const ACHIEVEMENTS = [
+  { id: 'primera_sangre', name: 'Primera sangre', desc: 'Abate a tu primer enemigo.', gloria: 1 },
+  { id: 'cazador',        name: 'Cazador',        desc: 'Abate a 500 enemigos en total.', gloria: 2 },
+  { id: 'exterminador',   name: 'Exterminador',   desc: 'Abate a 5.000 enemigos en total.', gloria: 4 },
+  { id: 'sin_fisuras',    name: 'Sin fisuras',    desc: 'Completa un capítulo sin perder ninguna vida.', gloria: 2 },
+  { id: 'ingeniero',      name: 'Ingeniero',      desc: 'Construye 100 torres en total.', gloria: 2 },
+  { id: 'maestro',        name: 'Maestro de obras', desc: 'Especializa una torre por primera vez.', gloria: 1 },
+  { id: 'coleccionista',  name: 'Coleccionista',  desc: 'Construye los 7 tipos de torre en una misma partida.', gloria: 3 },
+  { id: 'avaro',          name: 'Avaro',          desc: 'Acumula 1.500 de oro en una partida.', gloria: 2 },
+  { id: 'impaciente',     name: 'Impaciente',     desc: 'Adelanta 10 oleadas en un mismo capítulo.', gloria: 2 },
+  { id: 'heroe',          name: 'Héroe de Valdoria', desc: 'Completa la campaña.', gloria: 5 },
+  { id: 'pesadilla',      name: 'Pesadilla',      desc: 'Completa un capítulo en dificultad Pesadilla.', gloria: 4 },
+  { id: 'asedio20',       name: 'Resistencia',    desc: 'Alcanza la oleada 20 en Asedio infinito.', gloria: 3 },
+  { id: 'asedio50',       name: 'Inquebrantable', desc: 'Alcanza la oleada 50 en Asedio infinito.', gloria: 6 },
+  { id: 'matadragones',   name: 'Matadragones',   desc: 'Abate al Dragón Anciano.', gloria: 3 },
+  { id: 'archimago',      name: 'Archimago de la corte', desc: 'Lanza 50 hechizos en total.', gloria: 2 },
+  { id: 'justicia',       name: 'Justicia',       desc: 'Derrota al Canciller Malaquías.', gloria: 3 },
+  { id: 'estrellas',      name: 'Cielo estrellado', desc: 'Consigue las 30 estrellas de la campaña.', gloria: 6 },
+];
+
+/* ---------- CAPÍTULOS ---------- */
+/* paths: lista de recorridos; cada recorrido es una lista de [col,fila] alineados en ejes.
+   pool: enemigos disponibles con la oleada a partir de la cual aparecen. */
+const LEVELS = [
+  { id: 1, name: 'El Paso del Espino', waves: 10, gold: 260, lives: 20, budget: 8.0, hpMult: 1.0, seed: 11,
+    theme: { grass: '#5f9a48', grass2: '#589144', path: '#c8b07a', edge: '#a89060' },
+    paths: [[[-1,7],[5,7],[5,3],[12,3],[12,10],[18,10],[18,6],[24,6]]],
+    decor: { trees: 26, rocks: 6, water: [] },
+    pool: [{ t: 'goblin', from: 1 }, { t: 'lobo', from: 4 }, { t: 'orco', from: 7 }],
+    boss: 'boss_zarg', unlock: { spell: 'lluvia' },
+    story: {
+      intro: ['Valdoria lleva treinta años en paz. Demasiados, dicen los viejos soldados. Tú eres la nueva comandante de la Guardia del Norte, y tu primer destino es un paso de montaña donde nunca ocurre nada.', 'Hasta hoy. Los vigías han visto humo en las aldeas del Espino. Los goblins bajan de las cumbres, y no vienen a comerciar.', 'Construye torres de arqueros junto al camino. Cada goblin que cruce la muralla costará una vida al reino.'],
+      outro: ['Zarg, el «rey» goblin, ha caído con su corona robada. Pero entre sus pertenencias has encontrado algo extraño: monedas de oro nuevas, acuñadas en la capital.', '¿Quién paga a los goblins para que ataquen Valdoria?', 'El Consejo te concede el favor de la Corona: los hechizos de batalla quedan a tu disposición.'],
+    } },
+  { id: 2, name: 'Bosque de Umbría', waves: 12, gold: 300, lives: 20, budget: 9.5, hpMult: 1.1, seed: 23,
+    theme: { grass: '#4c8a45', grass2: '#45803f', path: '#b8a070', edge: '#98805a' },
+    paths: [[[-1,2],[4,2],[4,11],[9,11],[9,5],[15,5],[15,12],[20,12],[20,3],[24,3]]],
+    decor: { trees: 48, rocks: 4, water: [] },
+    pool: [{ t: 'goblin', from: 1 }, { t: 'lobo', from: 1 }, { t: 'orco', from: 4 }, { t: 'chaman', from: 8 }],
+    boss: 'boss_colmillo', unlock: { tower: 'catapulta' },
+    story: {
+      intro: ['El bosque de Umbría separa el Espino de las tierras del río. Los leñadores hablan de lobos que no huyen del fuego y de aullidos que responden a una voz.', 'Los ingenieros de la corte han enviado los planos de una catapulta: perfecta contra grupos numerosos, inútil contra lo que vuela.', 'Un camino largo y serpenteante es tu ventaja. Úsalo.'],
+      outro: ['Colmillo, el lobo alfa, ha muerto a los pies de tus torres. Los goblins que lo seguían han huido hacia el este, hacia el vado.', 'En el bosque has hallado un campamento orco abandonado. Habían tallado un símbolo en los árboles: una corona sobre una calavera.'],
+    } },
+  { id: 3, name: 'Vado del río Argén', waves: 14, gold: 340, lives: 20, budget: 11, hpMult: 1.2, seed: 37,
+    theme: { grass: '#6a9c4e', grass2: '#62934a', path: '#cdb27c', edge: '#ab9364' },
+    paths: [[[11,-1],[11,4],[3,4],[3,9],[13,9],[13,13],[19,13],[19,6],[24,6]]],
+    decor: { trees: 14, rocks: 10, water: [{ c: 0, r: 11, w: 9, h: 4 }, { c: 15, r: 0, w: 9, h: 4 }, { c: 21, r: 11, w: 3, h: 4 }] },
+    pool: [{ t: 'goblin', from: 1 }, { t: 'orco', from: 1 }, { t: 'lobo', from: 3 }, { t: 'orco_pesado', from: 6 }, { t: 'chaman', from: 9 }],
+    boss: 'boss_grukk', unlock: { tower: 'mago' },
+    story: {
+      intro: ['El vado del Argén es la única forma de cruzar el río sin barcas en cincuenta leguas. Si cae, las tribus orcas tendrán el corazón del reino a tres días de marcha.', 'Los exploradores confirman lo peor: las tribus se han unido bajo un señor de la guerra llamado Grukk. Sus guerreros de élite llevan armadura de hierro; tus flechas rebotarán en ella.', 'La Academia de Magos ha enviado a sus aprendices. Su fuego ignora cualquier armadura.'],
+      outro: ['Grukk ha caído. Antes de morir se ha reído de ti: «El Canciller nos prometió el vado. El Canciller nos prometió todo».', 'Malaquías, Canciller del Reino, consejero del rey desde antes de que nacieras. No puede ser. No debe ser.', 'Pero las monedas de la capital ahora tienen sentido.'],
+    } },
+  { id: 4, name: 'Ruinas de Kel-Morath', waves: 16, gold: 380, lives: 20, budget: 12.5, hpMult: 1.3, seed: 41,
+    theme: { grass: '#6f7f5a', grass2: '#667656', path: '#a09a88', edge: '#807a6a' },
+    paths: [[[-1,3],[6,3],[6,8],[14,8],[14,2],[20,2],[20,10],[24,10]], [[-1,12],[6,12],[6,8],[14,8],[14,2],[20,2],[20,10],[24,10]]],
+    decor: { trees: 8, rocks: 22, water: [] },
+    pool: [{ t: 'esqueleto', from: 1 }, { t: 'murcielago', from: 3 }, { t: 'orco', from: 5 }, { t: 'nigromante', from: 8 }, { t: 'gargola', from: 11 }],
+    boss: 'boss_sombra', unlock: { tower: 'hielo', spell: 'escarcha' },
+    story: {
+      intro: ['Kel-Morath fue una ciudad antes de ser una ruina. Los libros dicen que su último señor, Vhaldrek, buscó la inmortalidad y la encontró... a un precio.', 'Ahora los muertos caminan entre sus columnas. Los esqueletos apenas sienten la magia, así que vuelve a confiar en el acero y en la piedra. Y cuidado con lo que vuela.', 'Dos caminos convergen en las ruinas. Defiende el cruce.'],
+      outro: ['La sombra que os atacaba no era Vhaldrek, solo un eco de su poder. Pero un eco de un liche muerto hace siglos no camina por sí solo.', 'Alguien lo ha despertado. Y ese alguien tiene la llave de la biblioteca real.', 'Los sacerdotes del Norte te entregan la magia del hielo: si no puedes matar a un enemigo, al menos podrás hacer que llegue tarde.'],
+    } },
+  { id: 5, name: 'Minas de Hierro', waves: 18, gold: 480, lives: 20, budget: 11.5, hpMult: 1.4, seed: 53,
+    theme: { grass: '#7d7568', grass2: '#746d60', path: '#b0a690', edge: '#8e8570' },
+    paths: [[[-1,4],[8,4],[8,1],[16,1],[16,7],[24,7]], [[-1,11],[5,11],[5,13],[13,13],[13,7],[24,7]]],
+    decor: { trees: 4, rocks: 34, water: [] },
+    pool: [{ t: 'orco', from: 1 }, { t: 'orco_pesado', from: 3 }, { t: 'troll', from: 6 }, { t: 'lobo', from: 5 }, { t: 'chaman', from: 8 }, { t: 'murcielago', from: 10 }, { t: 'ogro', from: 14 }],
+    boss: 'boss_reytroll', unlock: { tower: 'ballesta' },
+    story: {
+      intro: ['Las Minas de Hierro alimentan las forjas de todo el reino. Los mineros huyeron hace tres días: algo grande se ha despertado en los túneles profundos.', 'Los troles regeneran sus heridas. Contra ellos no vale el daño lento: hay que golpear fuerte y rápido. Los herreros de la mina te dejan sus ballestas pesadas.', 'Dos entradas, una salida. No dejes que se junten.'],
+      outro: ['El Rey Trol Gorm ha muerto y las minas vuelven a ser vuestras. En sus cámaras había cadenas nuevas y una carta sellada con el emblema del Canciller.', '«Despertad a la bestia. El liche necesita tiempo». Ya no hay duda posible.', 'Pero el rey no te creerá sin pruebas. Y Malaquías es quien decide quién ve al rey.'],
+    } },
+  { id: 6, name: 'Ciénaga de Mordún', waves: 20, gold: 480, lives: 20, budget: 15.5, hpMult: 1.5, seed: 67,
+    theme: { grass: '#556a3c', grass2: '#4d6238', path: '#8f8a5a', edge: '#6f6a44' },
+    paths: [[[-1,1],[3,1],[3,6],[8,6],[8,2],[13,2],[13,9],[6,9],[6,13],[17,13],[17,5],[21,5],[21,11],[24,11]]],
+    decor: { trees: 18, rocks: 6, water: [{ c: 9, r: 11, w: 7, h: 2 }, { c: 19, r: 0, w: 5, h: 3 }, { c: 0, r: 11, w: 4, h: 4 }, { c: 10, r: 4, w: 2, h: 4 }] },
+    pool: [{ t: 'esqueleto', from: 1 }, { t: 'espectro', from: 3 }, { t: 'nigromante', from: 4 }, { t: 'lobo', from: 6 }, { t: 'gargola', from: 9 }, { t: 'troll', from: 12 }, { t: 'ogro', from: 16 }],
+    boss: 'boss_hidra', unlock: { tower: 'alquimista' },
+    story: {
+      intro: ['La ciénaga de Mordún es el camino que nadie toma. Por eso lo toman ellos. Los espectros del liche cruzan las aguas muertas, y ninguna flecha los detiene: solo la magia los disipa.', 'Una alquimista exiliada vive en la ciénaga. Sus venenos hacen daño verdadero: ni armadura ni resistencia mágica los frenan. Se une a tu causa... por un precio razonable.', 'El camino es largo y da muchas vueltas. Un enemigo lento es un enemigo muerto.'],
+      outro: ['La Hidra se ha hundido en el lodo. Entre sus fauces has recuperado el diario de un mensajero real.', 'Malaquías planea coronarse cuando el liche Vhaldrek haya «purificado» la capital. El ritual será en la Fortaleza de Obsidiana, dentro de veinte días.', 'Hay que llegar antes. Y para llegar, hay que cruzar el Puerto de Sal.'],
+    } },
+  { id: 7, name: 'Puerto de Sal', waves: 22, gold: 650, lives: 20, budget: 14, hpMult: 1.45, seed: 71,
+    theme: { grass: '#8fa06a', grass2: '#869862', path: '#d4c28e', edge: '#b2a274' },
+    paths: [[[-1,7],[14,7],[14,3],[19,3],[19,10],[24,10]], [[5,-1],[5,4],[8,4],[8,7],[14,7],[14,3],[19,3],[19,10],[24,10]], [[5,15],[5,10],[8,10],[8,7],[14,7],[14,3],[19,3],[19,10],[24,10]]],
+    decor: { trees: 10, rocks: 8, water: [{ c: 21, r: 0, w: 3, h: 8 }, { c: 21, r: 12, w: 3, h: 3 }, { c: 0, r: 0, w: 3, h: 4 }] },
+    pool: [{ t: 'jinete', from: 5 }, { t: 'orco', from: 1 }, { t: 'lobo', from: 1 }, { t: 'orco_pesado', from: 5 }, { t: 'murcielago', from: 6 }, { t: 'chaman', from: 8 }, { t: 'gargola', from: 11 }, { t: 'ogro', from: 14 }, { t: 'dragon_joven', from: 18 }],
+    boss: 'boss_corvus', unlock: { spell: 'meteoro' },
+    story: {
+      intro: ['El Puerto de Sal es la puerta del comercio de Valdoria. Hoy, una flota pirata bajo la bandera del Canciller descarga jinetes y mercenarios en sus muelles.', 'Tres caminos convergen en la plaza del mercado. La caballería es rápida: ralentízala o te desbordará.', 'El Gran Maestre de la Academia te confía su hechizo más peligroso: el Meteoro. Úsalo con cabeza.'],
+      outro: ['El Almirante Corvus ha caído con su flota. Los mercaderes del puerto, agradecidos, te entregan el oro que el Canciller les había arrebatado.', 'Ahora ya conoces la ruta: por las Cumbres del Dragón, hasta la Fortaleza de Obsidiana. Nadie ha cruzado las Cumbres y vuelto para contarlo.'],
+    } },
+  { id: 8, name: 'Cumbres del Dragón', waves: 24, gold: 600, lives: 20, budget: 17, hpMult: 1.7, seed: 83,
+    theme: { grass: '#8a8a95', grass2: '#80808c', path: '#b8b0a8', edge: '#948c84' },
+    paths: [[[-1,13],[4,13],[4,8],[1,8],[1,3],[7,3],[7,10],[12,10],[12,5],[17,5],[17,12],[22,12],[22,1],[24,1]]],
+    decor: { trees: 0, rocks: 40, water: [] },
+    pool: [{ t: 'murcielago', from: 1 }, { t: 'gargola', from: 1 }, { t: 'orco_pesado', from: 3 }, { t: 'espectro', from: 5 }, { t: 'jinete', from: 7 }, { t: 'dragon_joven', from: 9 }, { t: 'troll', from: 12 }, { t: 'ogro', from: 15 }],
+    boss: 'boss_dragon', unlock: { tower: 'templo' },
+    story: {
+      intro: ['Las Cumbres del Dragón: aire fino, nieve eterna y el nido de Ashkar, el Dragón Anciano. El Canciller le ha prometido las cosechas del reino a cambio de sus crías.', 'Aquí casi todo vuela. Las catapultas serán inútiles; confía en arqueros, magos y ballestas.', 'Los monjes de la montaña te ofrecen el Templo de la Luz: no ataca, pero bendice a las torres cercanas.'],
+      outro: ['Ashkar ha caído del cielo. Con él muere el último de los grandes dragones... y la última esperanza del Canciller de retener la montaña.', 'Desde la cumbre se ve la Fortaleza de Obsidiana. Las luces del ritual ya arden en sus torres.'],
+    } },
+  { id: 9, name: 'Fortaleza de Obsidiana', waves: 26, gold: 800, lives: 20, budget: 16, hpMult: 1.7, seed: 97,
+    theme: { grass: '#4a4652', grass2: '#44404c', path: '#8a8290', edge: '#6a6272' },
+    paths: [[[-1,5],[6,5],[6,10],[12,10],[12,4],[18,4],[18,8],[24,8]], [[-1,10],[3,10],[3,13],[9,13],[9,10],[12,10],[12,4],[18,4],[18,8],[24,8]]],
+    decor: { trees: 0, rocks: 30, water: [{ c: 20, r: 0, w: 4, h: 3 }, { c: 20, r: 12, w: 4, h: 3 }] },
+    pool: [{ t: 'orco_pesado', from: 2 }, { t: 'esqueleto', from: 1 }, { t: 'orco', from: 1 }, { t: 'jinete', from: 4 }, { t: 'nigromante', from: 5 }, { t: 'chaman', from: 7 }, { t: 'espectro', from: 9 }, { t: 'gargola', from: 11 }, { t: 'ogro', from: 13 }, { t: 'troll', from: 15 }, { t: 'dragon_joven', from: 19 }],
+    boss: 'boss_canciller', unlock: {},
+    story: {
+      intro: ['La Fortaleza de Obsidiana fue construida para proteger al reino. Hoy protege al hombre que lo traicionó. Malaquías está dentro, rodeado de todo lo que el oro y la nigromancia pueden comprar.', 'Sus tropas son veteranas, acorazadas y curadas por chamanes. No hay trucos: solo torres, oro y decisión.', 'Un ejército entero se interpone entre tú y la verdad.'],
+      outro: ['Malaquías yace ante tus torres. Antes de morir ha sonreído: «Llegas tarde, comandante. El ritual ya ha terminado. Él ya está aquí».', 'Bajo la fortaleza, la tierra tiembla. Vhaldrek, el Liche de Kel-Morath, ha vuelto. Y ahora marcha hacia el Corazón de Valdoria: el castillo del rey.'],
+    } },
+  { id: 10, name: 'El Corazón de la Sombra', waves: 30, gold: 850, lives: 20, budget: 22, hpMult: 2.8, seed: 101,
+    theme: { grass: '#3a3548', grass2: '#343043', path: '#7c748a', edge: '#5c5468' },
+    paths: [[[-1,7],[2,7],[2,1],[21,1],[21,13],[5,13],[5,4],[17,4],[17,10],[9,10],[9,7],[13,7]]],
+    decor: { trees: 0, rocks: 18, water: [] }, castle: [13, 7],
+    pool: [{ t: 'esqueleto', from: 1 }, { t: 'espectro', from: 1 }, { t: 'nigromante', from: 2 }, { t: 'orco_pesado', from: 3 }, { t: 'gargola', from: 5 }, { t: 'jinete', from: 7 }, { t: 'troll', from: 9 }, { t: 'chaman', from: 10 }, { t: 'ogro', from: 12 }, { t: 'dragon_joven', from: 16 }],
+    boss: 'boss_vhaldrek', unlock: { endless: true, diff: 'pesadilla' },
+    story: {
+      intro: ['El castillo del rey. La capital ha sido evacuada y el camino hacia el trono se enrosca como una serpiente alrededor del corazón de Valdoria.', 'Vhaldrek trae consigo a todos los muertos de todas las guerras. Treinta oleadas te separan del final. Cada torre, cada moneda y cada hechizo cuentan.', 'Los viejos soldados tenían razón: treinta años de paz fueron demasiados. Pero la Guardia del Norte sigue en pie. Y tú la mandas.'],
+      outro: ['Vhaldrek se deshace en ceniza y, por primera vez en siglos, los muertos de Kel-Morath descansan. El rey, de rodillas ante su pueblo, te nombra Protectora del Reino.', 'Pero la paz, dicen los viejos soldados, nunca es definitiva. Las torres siguen en pie. Y el Asedio infinito te espera.', '¡Has completado la campaña! Se ha desbloqueado el modo Asedio infinito y la dificultad Pesadilla.'],
+    } },
+];
+
+const ENDLESS = { id: 99, name: 'Asedio infinito', waves: Infinity, gold: 500, lives: 20, budget: 12, hpMult: 1.3, seed: 777,
+  theme: { grass: '#5a8a48', grass2: '#528244', path: '#c0aa78', edge: '#a08c5e' },
+  paths: [[[-1,7],[6,7],[6,2],[12,2],[12,12],[18,12],[18,7],[24,7]], [[12,-1],[12,2],[12,12],[18,12],[18,7],[24,7]]],
+  decor: { trees: 20, rocks: 12, water: [{ c: 0, r: 0, w: 4, h: 3 }] },
+  pool: [{ t: 'goblin', from: 1 }, { t: 'lobo', from: 2 }, { t: 'orco', from: 3 }, { t: 'esqueleto', from: 4 }, { t: 'murcielago', from: 5 }, { t: 'orco_pesado', from: 7 }, { t: 'chaman', from: 9 }, { t: 'jinete', from: 11 }, { t: 'gargola', from: 13 }, { t: 'nigromante', from: 15 }, { t: 'espectro', from: 17 }, { t: 'troll', from: 19 }, { t: 'ogro', from: 23 }, { t: 'dragon_joven', from: 27 }],
+  bosses: ['boss_zarg', 'boss_colmillo', 'boss_grukk', 'boss_sombra', 'boss_reytroll', 'boss_hidra', 'boss_corvus', 'boss_dragon', 'boss_canciller', 'boss_vhaldrek'],
+  story: { intro: ['La guerra ha terminado, pero las torres siguen en pie. Cada diez oleadas vuelve uno de los jefes que ya venciste, más fuerte que antes.', 'No hay victoria: solo la pregunta de cuánto aguantarás. Cada 10 oleadas ganas 1 de Gloria.'], outro: [] } };
+
+const DIFFS = {
+  normal:    { name: 'Normal',   hp: 1.0,  gold: 1.0, lives: 0,  desc: 'La experiencia pensada para la campaña.', bonus: 0 },
+  dificil:   { name: 'Difícil',  hp: 1.25, gold: 0.95, lives: -3, desc: 'Enemigos un 25% más resistentes, algo menos de oro y 17 vidas.', bonus: 1 },
+  pesadilla: { name: 'Pesadilla',hp: 1.6,  gold: 0.85, lives: -8, desc: 'Enemigos un 60% más resistentes, menos oro y 12 vidas.', bonus: 3 },
+};
+
+/* Generación determinista de oleadas */
+function genWave(level, w) {
+  const rng = mulberry32(level.seed * 7919 + w * 104729);
+  const total = level.waves;
+  const groups = [];
+  const isBoss = w === total;
+  const isEndlessBoss = level.id === 99 && w % 10 === 0;
+  let budget = level.budget * (1 + 0.2 * (w - 1)) * (w % 5 === 0 ? 1.35 : 1);
+  if (level.id === 99) budget = level.budget * (1 + 0.25 * (w - 1)) * (1 + Math.max(0, w - 30) * 0.02);
+  if (isBoss || isEndlessBoss) budget *= 0.55;
+  const pool = level.pool.filter(p => w >= p.from);
+  const recent = pool.filter(p => p.from >= w - 1 && p.from > 1);
+  const nTypes = Math.min(pool.length, 1 + Math.floor(rng() * 3));
+  const chosen = [];
+  if (recent.length && rng() < 0.85) chosen.push(recent[Math.floor(rng() * recent.length)]);
+  const rest = pool.filter(p => !chosen.includes(p)).sort(() => rng() - 0.5);
+  while (chosen.length < nTypes && rest.length) chosen.push(rest.pop());
+  let delay = 0;
+  chosen.forEach((p, i) => {
+    const e = ENEMIES[p.t];
+    const share = budget / chosen.length;
+    let count = Math.max(1, Math.round(share / e.cost));
+    if (count > 40) count = 40;
+    const interval = e.speed > 100 ? 0.45 : e.speed > 60 ? 0.75 : 1.1;
+    groups.push({ type: p.t, count, interval: interval * (0.8 + rng() * 0.4), delay });
+    delay += count * interval * 0.5 + 1.5;
+  });
+  if (isBoss) groups.push({ type: level.boss, count: 1, interval: 0, delay: delay + 3 });
+  if (isEndlessBoss) {
+    const b = level.bosses[Math.min(level.bosses.length - 1, Math.floor(w / 10) - 1)];
+    groups.push({ type: b, count: 1, interval: 0, delay: delay + 3 });
+  }
+  return groups;
+}
+
+const STAR_RULES = [ // vidas restantes relativas al máximo
+  { stars: 3, min: 1.0 }, { stars: 2, min: 0.75 }, { stars: 1, min: 0.0001 },
+];
+
+/* ==================== GUARDADO ==================== */
+const SAVE_KEY = 'baluarte_save_v1';
+const DEFAULT_SAVE = () => ({
+  stars: {},            // levelId -> estrellas máximas
+  diffDone: {},         // levelId -> { dificil: true, pesadilla: true }
+  gloria: 0,
+  meta: {},             // id -> nivel
+  unlocked: { towers: ['arquero'], spells: [], endless: false, pesadilla: false },
+  achievements: {},
+  codex: {},
+  stats: { kills: 0, towers: 0, spells: 0, wavesTotal: 0, bestEndless: 0, gloriaTotal: 0 },
+  settings: { sound: true, showRanges: true },
+  seenIntro: false,
+});
+let SAVE = DEFAULT_SAVE();
+function loadSave() {
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (raw) {
+      const s = JSON.parse(raw);
+      SAVE = Object.assign(DEFAULT_SAVE(), s);
+      SAVE.unlocked = Object.assign(DEFAULT_SAVE().unlocked, s.unlocked || {});
+      SAVE.stats = Object.assign(DEFAULT_SAVE().stats, s.stats || {});
+      SAVE.settings = Object.assign(DEFAULT_SAVE().settings, s.settings || {});
+    }
+  } catch (e) { console.warn('No se pudo cargar la partida', e); }
+}
+function persist() {
+  try { localStorage.setItem(SAVE_KEY, JSON.stringify(SAVE)); } catch (e) {}
+}
+function metaLvl(id) { return SAVE.meta[id] || 0; }
+function totalStars() { return Object.values(SAVE.stars).reduce((a, b) => a + b, 0); }
+function levelUnlocked(id) { return id === 1 || (SAVE.stars[id - 1] || 0) > 0; }
+
+/* ==================== SONIDO ==================== */
+const Sound = (() => {
+  let ctx = null;
+  function ac() { if (!ctx) { try { ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} } return ctx; }
+  function tone(freq, dur, type = 'square', vol = 0.05, slide = 0) {
+    if (!SAVE.settings.sound) return;
+    const c = ac(); if (!c) return;
+    if (c.state === 'suspended') c.resume();
+    const o = c.createOscillator(), g = c.createGain();
+    o.type = type; o.frequency.setValueAtTime(freq, c.currentTime);
+    if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(20, freq + slide), c.currentTime + dur);
+    g.gain.setValueAtTime(vol, c.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.0001, c.currentTime + dur);
+    o.connect(g).connect(c.destination); o.start(); o.stop(c.currentTime + dur);
+  }
+  const last = {};
+  function play(name) {
+    const now = performance.now();
+    if (last[name] && now - last[name] < 40) return; last[name] = now;
+    switch (name) {
+      case 'shoot': tone(700, 0.05, 'triangle', 0.02, -300); break;
+      case 'magic': tone(420, 0.12, 'sine', 0.03, 300); break;
+      case 'boom': tone(90, 0.25, 'sawtooth', 0.05, -60); break;
+      case 'hit': tone(200, 0.05, 'square', 0.02); break;
+      case 'build': tone(330, 0.1, 'triangle', 0.05, 200); setTimeout(() => tone(500, 0.12, 'triangle', 0.05), 80); break;
+      case 'sell': tone(500, 0.1, 'triangle', 0.04, -200); break;
+      case 'wave': tone(220, 0.25, 'sawtooth', 0.05); setTimeout(() => tone(330, 0.3, 'sawtooth', 0.05), 200); break;
+      case 'leak': tone(150, 0.3, 'square', 0.06, -80); break;
+      case 'coin': tone(900, 0.07, 'sine', 0.03, 400); break;
+      case 'spell': tone(300, 0.4, 'sine', 0.06, 500); break;
+      case 'freeze': tone(1200, 0.4, 'sine', 0.05, -700); break;
+      case 'win': [330, 415, 495, 660].forEach((f, i) => setTimeout(() => tone(f, 0.35, 'triangle', 0.06), i * 150)); break;
+      case 'lose': [330, 280, 220, 160].forEach((f, i) => setTimeout(() => tone(f, 0.4, 'sawtooth', 0.05), i * 200)); break;
+      case 'error': tone(120, 0.15, 'square', 0.04); break;
+      case 'click': tone(600, 0.04, 'square', 0.02); break;
+    }
+  }
+  return { play };
+})();
+
+/* ==================== MAPA ==================== */
+function buildMap(level) {
+  const grid = []; // 0 libre, 1 camino, 2 árbol, 3 roca, 4 agua, 5 castillo
+  for (let r = 0; r < ROWS; r++) { grid.push(new Array(COLS).fill(0)); }
+  const paths = level.paths.map(wps => {
+    const pts = wps.map(([c, r]) => ({ x: c * TILE + TILE / 2, y: r * TILE + TILE / 2 }));
+    // rasterizar
+    for (let i = 0; i < wps.length - 1; i++) {
+      let [c0, r0] = wps[i], [c1, r1] = wps[i + 1];
+      const dc = Math.sign(c1 - c0), dr = Math.sign(r1 - r0);
+      let c = c0, r = r0;
+      while (true) {
+        if (c >= 0 && c < COLS && r >= 0 && r < ROWS) grid[r][c] = 1;
+        if (c === c1 && r === r1) break;
+        c += dc; r += dr;
+      }
+    }
+    const cum = [0];
+    for (let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y));
+    return { pts, cum, total: cum[cum.length - 1] };
+  });
+  (level.decor.water || []).forEach(w => {
+    for (let r = w.r; r < w.r + w.h; r++) for (let c = w.c; c < w.c + w.w; c++)
+      if (r >= 0 && r < ROWS && c >= 0 && c < COLS && grid[r][c] === 0) grid[r][c] = 4;
+  });
+  if (level.castle) grid[level.castle[1]][level.castle[0]] = 5;
+  const rng = mulberry32(level.seed * 31 + 7);
+  const decor = [];
+  function nearPath(c, r) {
+    for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) {
+      const rr = r + dr, cc = c + dc;
+      if (rr >= 0 && rr < ROWS && cc >= 0 && cc < COLS && grid[rr][cc] === 1) return true;
+    }
+    return false;
+  }
+  function place(kind, n) {
+    let tries = 0;
+    while (n > 0 && tries < 500) {
+      tries++;
+      const c = Math.floor(rng() * COLS), r = Math.floor(rng() * ROWS);
+      if (grid[r][c] !== 0 || nearPath(c, r)) continue;
+      grid[r][c] = kind === 'tree' ? 2 : 3;
+      decor.push({ kind, c, r, v: rng() });
+      n--;
+    }
+  }
+  place('tree', level.decor.trees); place('rock', level.decor.rocks);
+  return { grid, paths, decor };
+}
+
+function renderMapCache(level, map) {
+  const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+  const g = cv.getContext('2d');
+  const th = level.theme;
+  const rng = mulberry32(level.seed);
+  for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
+    g.fillStyle = ((r + c) % 2 === 0) ? th.grass : th.grass2;
+    g.fillRect(c * TILE, r * TILE, TILE, TILE);
+  }
+  // hierba: pequeños detalles
+  g.fillStyle = 'rgba(0,0,0,0.06)';
+  for (let i = 0; i < 260; i++) { const x = rng() * W, y = rng() * H; if (map.grid[Math.floor(y / TILE)][Math.floor(x / TILE)] === 0) g.fillRect(x, y, 3, 2); }
+  // agua
+  for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) if (map.grid[r][c] === 4) {
+    g.fillStyle = '#3f7fbf'; g.fillRect(c * TILE, r * TILE, TILE, TILE);
+    g.fillStyle = 'rgba(255,255,255,0.15)'; g.fillRect(c * TILE + 6, r * TILE + 10 + (c % 2) * 12, 18, 3);
+  }
+  // camino
+  for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) if (map.grid[r][c] === 1) {
+    g.fillStyle = th.edge; g.fillRect(c * TILE, r * TILE, TILE, TILE);
+  }
+  for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) if (map.grid[r][c] === 1) {
+    g.fillStyle = th.path;
+    const l = c > 0 && map.grid[r][c - 1] === 1, rr = c < COLS - 1 && map.grid[r][c + 1] === 1;
+    const u = r > 0 && map.grid[r - 1][c] === 1, d = r < ROWS - 1 && map.grid[r + 1][c] === 1;
+    const edgeC = c === 0 || c === COLS - 1, edgeR = r === 0 || r === ROWS - 1;
+    g.fillRect(c * TILE + (l || (edgeC && c === 0) ? 0 : 5), r * TILE + (u || (edgeR && r === 0) ? 0 : 5),
+      TILE - (l || (edgeC && c === 0) ? 0 : 5) - (rr || (edgeC && c === COLS - 1) ? 0 : 5),
+      TILE - (u || (edgeR && r === 0) ? 0 : 5) - (d || (edgeR && r === ROWS - 1) ? 0 : 5));
+    g.fillStyle = 'rgba(0,0,0,0.05)'; g.fillRect(c * TILE + 8 + (r % 3) * 6, r * TILE + 12 + (c % 2) * 10, 6, 4);
+  }
+  // decoración
+  map.decor.forEach(d => {
+    const x = d.c * TILE + TILE / 2, y = d.r * TILE + TILE / 2;
+    if (d.kind === 'tree') {
+      g.fillStyle = 'rgba(0,0,0,0.18)'; g.beginPath(); g.ellipse(x + 3, y + 12, 12, 5, 0, 0, Math.PI * 2); g.fill();
+      g.fillStyle = '#5a3a1a'; g.fillRect(x - 2, y + 2, 4, 10);
+      g.fillStyle = d.v > 0.5 ? '#2f7a34' : '#3a8a3a';
+      g.beginPath(); g.moveTo(x, y - 16); g.lineTo(x + 12, y + 4); g.lineTo(x - 12, y + 4); g.closePath(); g.fill();
+      g.fillStyle = d.v > 0.5 ? '#3d9440' : '#48a048';
+      g.beginPath(); g.moveTo(x, y - 12); g.lineTo(x + 8, y); g.lineTo(x - 8, y); g.closePath(); g.fill();
+    } else {
+      g.fillStyle = 'rgba(0,0,0,0.18)'; g.beginPath(); g.ellipse(x + 2, y + 8, 12, 5, 0, 0, Math.PI * 2); g.fill();
+      g.fillStyle = '#8a8a8a'; g.beginPath(); g.moveTo(x - 12, y + 6); g.lineTo(x - 6, y - 8); g.lineTo(x + 4, y - 10); g.lineTo(x + 12, y + 2); g.lineTo(x + 8, y + 7); g.closePath(); g.fill();
+      g.fillStyle = '#a5a5a5'; g.beginPath(); g.moveTo(x - 6, y - 8); g.lineTo(x + 4, y - 10); g.lineTo(x + 2, y - 2); g.closePath(); g.fill();
+    }
+  });
+  // castillo (fin de camino) o marcas de salida
+  if (level.castle) {
+    const x = level.castle[0] * TILE + TILE / 2, y = level.castle[1] * TILE + TILE / 2;
+    g.fillStyle = '#c9c1b0'; g.fillRect(x - 18, y - 12, 36, 28);
+    g.fillStyle = '#a8a094'; for (let i = -18; i < 18; i += 9) g.fillRect(x + i, y - 18, 5, 8);
+    g.fillStyle = '#7a3030'; g.fillRect(x - 5, y + 2, 10, 14);
+    g.fillStyle = '#c9a227'; g.beginPath(); g.moveTo(x, y - 30); g.lineTo(x + 10, y - 25); g.lineTo(x, y - 20); g.closePath(); g.fill();
+    g.fillRect(x - 1, y - 30, 2, 14);
+  }
+  return cv;
+}
+
+/* ==================== UTILIDADES ==================== */
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+function posOnPath(path, d) {
+  if (d <= 0) return { x: path.pts[0].x, y: path.pts[0].y, ang: 0 };
+  for (let i = 1; i < path.pts.length; i++) {
+    if (d <= path.cum[i]) {
+      const t = (d - path.cum[i - 1]) / (path.cum[i] - path.cum[i - 1] || 1);
+      const a = path.pts[i - 1], b = path.pts[i];
+      return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t, ang: Math.atan2(b.y - a.y, b.x - a.x) };
+    }
+  }
+  const p = path.pts[path.pts.length - 1];
+  return { x: p.x, y: p.y, ang: 0 };
+}
+function fmt(n) { return Math.round(n).toLocaleString('es-ES'); }
+
+/* ==================== PARTIDA ==================== */
+class Game {
+  constructor(level, diff, canvas) {
+    this.level = level; this.diff = DIFFS[diff]; this.diffKey = diff;
+    this.canvas = canvas; this.ctx = canvas.getContext('2d');
+    this.map = buildMap(level);
+    this.mapCache = renderMapCache(level, this.map);
+    this.gold = level.gold + metaLvl('tesoro') * 45;
+    this.maxLives = Math.max(5, level.lives + this.diff.lives + metaLvl('muralla') * 2);
+    this.lives = this.maxLives;
+    this.wave = 0; // oleadas completadas / en curso
+    this.waveActive = false; this.countdown = -1; // -1: esperando al jugador
+    this.enemies = []; this.towers = []; this.projectiles = []; this.effects = []; this.texts = [];
+    this.spawnQueue = []; this.time = 0; this.speed = 1; this.paused = false;
+    this.selected = null; this.buildType = null; this.hover = null; this.spellMode = null;
+    this.cooldowns = {}; SPELL_ORDER.forEach(s => this.cooldowns[s] = 0);
+    this.stats = { kills: 0, towersBuilt: 0, early: 0, spells: 0, types: new Set(), livesLost: 0, goldEarned: 0, maxGold: this.gold };
+    this.over = false; this.won = false; this.log = [];
+    this.buffDirty = true;
+    this.uiDirty = true;
+    this.summonTimers = new Map();
+  }
+  /* ---- economía ---- */
+  towerCost(type) { return Math.round(TOWERS[type].cost * (1 - 0.05 * metaLvl('ingenieros'))); }
+  upgradeCost(base) { return Math.round(base * (1 - 0.06 * metaLvl('veteranos'))); }
+  sellValue(t) { return Math.round(t.invested * (0.6 + 0.1 * metaLvl('herreria'))); }
+  addGold(n, x, y, fromKill) {
+    n = Math.round(n); if (n <= 0) return;
+    this.gold += n; this.stats.goldEarned += n; this.stats.maxGold = Math.max(this.stats.maxGold, this.gold);
+    if (x !== undefined) this.floatText('+' + n, x, y, '#ffd85a');
+    this.uiDirty = true;
+  }
+  floatText(txt, x, y, color, size) { this.texts.push({ txt, x, y, color, t: 1.1, size: size || 13 }); }
+  msg(txt, color) { this.log.unshift({ txt, color: color || '#e8e0c8' }); if (this.log.length > 4) this.log.pop(); this.logT = 6; this.uiDirty = true; }
+
+  /* ---- construcción ---- */
+  canBuild(c, r) {
+    if (c < 0 || r < 0 || c >= COLS || r >= ROWS) return false;
+    if (this.map.grid[r][c] !== 0) return false;
+    return !this.towers.some(t => t.c === c && t.r === r);
+  }
+  build(type, c, r) {
+    if (!this.canBuild(c, r)) { Sound.play('error'); return false; }
+    const cost = this.towerCost(type);
+    if (this.gold < cost) { this.msg('No tienes oro suficiente.', '#ff8a7a'); Sound.play('error'); return false; }
+    this.gold -= cost;
+    const t = { type, c, r, x: c * TILE + TILE / 2, y: r * TILE + TILE / 2, lvl: 0, spec: -1, invested: cost, cooldown: 0, angle: -Math.PI / 2, targetMode: 0, kills: 0, dmgDone: 0, id: Math.random() };
+    this.towers.push(t); this.stats.towersBuilt++; this.stats.types.add(type);
+    SAVE.stats.towers++; this.buffDirty = true; this.uiDirty = true;
+    Sound.play('build');
+    this.effects.push({ kind: 'ring', x: t.x, y: t.y, r: 8, max: 34, t: 0.35, color: '#fff' });
+    this.selected = t;
+    return true;
+  }
+  upgrade(t) {
+    const def = TOWERS[t.type];
+    if (t.spec >= 0 || t.lvl >= def.levels.length - 1) return;
+    const cost = this.upgradeCost(def.levels[t.lvl + 1].cost);
+    if (this.gold < cost) { this.msg('No tienes oro suficiente.', '#ff8a7a'); Sound.play('error'); return; }
+    this.gold -= cost; t.invested += cost; t.lvl++; this.buffDirty = true; this.uiDirty = true; Sound.play('build');
+    this.effects.push({ kind: 'ring', x: t.x, y: t.y, r: 8, max: 30, t: 0.35, color: '#ffe680' });
+  }
+  specialize(t, i) {
+    const def = TOWERS[t.type];
+    if (t.spec >= 0 || t.lvl < def.levels.length - 1) return;
+    const cost = this.upgradeCost(def.specs[i].cost);
+    if (this.gold < cost) { this.msg('No tienes oro suficiente.', '#ff8a7a'); Sound.play('error'); return; }
+    this.gold -= cost; t.invested += cost; t.spec = i; this.buffDirty = true; this.uiDirty = true; Sound.play('build');
+    this.effects.push({ kind: 'ring', x: t.x, y: t.y, r: 8, max: 46, t: 0.5, color: '#ffe680' });
+    this.msg(def.specs[i].name + ' lista.', '#ffe680');
+    unlockAchievement('maestro');
+  }
+  sell(t) {
+    const v = this.sellValue(t); this.gold += v; this.towers.splice(this.towers.indexOf(t), 1);
+    this.floatText('+' + v, t.x, t.y, '#ffd85a'); this.selected = null; this.buffDirty = true; this.uiDirty = true; Sound.play('sell');
+  }
+  /* stats efectivas de una torre (con buffs y mejoras globales) */
+  stat(t) {
+    const def = TOWERS[t.type];
+    let s = Object.assign({}, def.levels[t.lvl]);
+    if (t.spec >= 0) s = Object.assign(s, def.specs[t.spec].mods);
+    const dm = 1 + 0.06 * metaLvl('arsenal') + (t.buffDmg || 0);
+    const rm = 1 + 0.04 * metaLvl('vigia') + (t.buffRange || 0);
+    s.dmg = s.dmg * dm; s.range = s.range * rm; s.poison = (s.poison || 0) * dm; s.burn = (s.burn || 0) * dm;
+    s.goldBuff = t.goldBuff || 0;
+    return s;
+  }
+  recomputeBuffs() {
+    this.towers.forEach(t => { t.buffDmg = 0; t.buffRange = 0; t.goldBuff = 0; });
+    this.towers.filter(t => t.type === 'templo').forEach(tp => {
+      const def = TOWERS.templo; let s = Object.assign({}, def.levels[tp.lvl]); if (tp.spec >= 0) s = Object.assign(s, def.specs[tp.spec].mods);
+      const range = s.range * (1 + 0.04 * metaLvl('vigia'));
+      this.towers.forEach(t => {
+        if (t === tp || t.type === 'templo') return;
+        if (dist(t, tp) <= range) { t.buffDmg = Math.max(t.buffDmg, s.buffDmg); t.buffRange = Math.max(t.buffRange, s.buffRange); if (s.goldBuff) t.goldBuff = Math.max(t.goldBuff, s.goldBuff); }
+      });
+    });
+    this.buffDirty = false;
+  }
+
+  /* ---- oleadas ---- */
+  startWave(early) {
+    if (this.over) return;
+    if (this.level.waves !== Infinity && this.wave >= this.level.waves) return;
+    if (this.waveActive && this.level.id !== 99 && this.wave >= this.level.waves) return;
+    if (early && this.countdown > 0) { const bonus = Math.round(this.countdown * 2.5); this.addGold(bonus); this.msg(`Oleada adelantada: +${bonus} de oro`, '#ffd85a'); this.stats.early++; if (this.stats.early >= 10) unlockAchievement('impaciente'); }
+    this.wave++; this.waveActive = true; this.countdown = -1; this.uiDirty = true;
+    const groups = genWave(this.level, this.wave);
+    const wavesLeft = this.level.waves === Infinity ? '' : ` / ${this.level.waves}`;
+    groups.forEach(gp => {
+      for (let i = 0; i < gp.count; i++) {
+        const pathIdx = (gp.count > 1 && this.map.paths.length > 1) ? (i % this.map.paths.length) : Math.floor(mulberry32(this.level.seed + this.wave * 13 + i)() * this.map.paths.length);
+        this.spawnQueue.push({ type: gp.type, at: this.time + gp.delay + i * gp.interval, path: pathIdx });
+      }
+    });
+    this.spawnQueue.sort((a, b) => a.at - b.at);
+    const boss = groups.find(gp => ENEMIES[gp.type].boss);
+    if (boss) this.msg(`¡Oleada ${this.wave}${wavesLeft}! Se acerca ${ENEMIES[boss.type].name}`, '#ff9a6a');
+    else this.msg(`Oleada ${this.wave}${wavesLeft}`, '#e8e0c8');
+    Sound.play('wave');
+  }
+  spawn(type, pathIdx, d) {
+    const def = ENEMIES[type];
+    const wm = this.level.id === 99 ? (1 + 0.08 * (this.wave - 1)) * (1 + Math.max(0, this.wave - 30) * 0.05) : (1 + 0.04 * (this.wave - 1));
+    let hp = def.hp * this.level.hpMult * (def.boss ? 1 : wm) * this.diff.hp;
+    if (def.boss && this.level.id === 99) hp *= 1 + this.wave / 15;
+    const e = { type, def, hp, maxHp: hp, path: pathIdx, d: d || 0, x: 0, y: 0, ang: 0, slow: 0, slowT: 0, frozen: 0, dots: [], corroded: 0, alive: true, flying: !!def.flying, id: Math.random(), wobble: Math.random() * 6.28 };
+    const p = posOnPath(this.map.paths[pathIdx], e.d); e.x = p.x; e.y = p.y;
+    this.enemies.push(e);
+    if (!SAVE.codex[type]) { SAVE.codex[type] = true; persist(); }
+    return e;
+  }
+  waveCleared() {
+    this.waveActive = false;
+    SAVE.stats.wavesTotal++;
+    const bonus = 20 + this.wave * 3 + 15 * metaLvl('botin');
+    this.addGold(bonus); this.msg(`Oleada ${this.wave} superada: +${bonus} de oro`, '#a8e8a0');
+    this.towers.forEach(t => { if (t.type === 'templo' && t.spec === 0 && this.lives < this.maxLives) { this.lives++; this.floatText('+1 ♥', t.x, t.y, '#ff8fa8'); } });
+    if (this.gold >= 1500) unlockAchievement('avaro');
+    if (this.level.id === 99) {
+      if (this.wave % 10 === 0) { SAVE.gloria++; SAVE.stats.gloriaTotal++; this.msg('¡+1 Gloria!', '#ffe680'); }
+      if (this.wave >= 20) unlockAchievement('asedio20');
+      if (this.wave >= 50) unlockAchievement('asedio50');
+      SAVE.stats.bestEndless = Math.max(SAVE.stats.bestEndless, this.wave); persist();
+      this.countdown = 15;
+    } else if (this.wave >= this.level.waves) {
+      this.finish(true);
+    } else {
+      this.countdown = 18;
+    }
+    this.uiDirty = true;
+  }
+  finish(won) {
+    if (this.over) return;
+    this.over = true; this.won = won; this.uiDirty = true;
+    Sound.play(won ? 'win' : 'lose');
+    if (typeof onGameOver === 'function') onGameOver(this, won);
+  }
+
+  /* ---- hechizos ---- */
+  castSpell(key, x, y) {
+    const sp = SPELLS[key];
+    if (!SAVE.unlocked.spells.includes(key) || this.cooldowns[key] > 0 || this.over) return false;
+    this.cooldowns[key] = sp.cd * (1 - 0.1 * metaLvl('hechiceria'));
+    this.stats.spells++; SAVE.stats.spells++; if (SAVE.stats.spells >= 50) unlockAchievement('archimago');
+    Sound.play(key === 'escarcha' ? 'freeze' : 'spell');
+    if (key === 'escarcha') {
+      this.enemies.forEach(e => { if (!e.def.boss || true) e.frozen = Math.max(e.frozen, sp.freeze * (e.def.boss ? 0.5 : 1)); });
+      this.effects.push({ kind: 'flash', t: 0.5, color: 'rgba(160,220,255,0.45)' });
+    } else {
+      this.effects.push({ kind: 'ring', x, y, r: 10, max: sp.radius, t: 0.5, color: sp.color });
+      if (key === 'meteoro') this.effects.push({ kind: 'meteor', x, y, t: 0.6 });
+      this.enemies.forEach(e => {
+        if (dist(e, { x, y }) <= sp.radius + e.def.r) {
+          this.damage(e, sp.dmg, sp.type, null, 0.5);
+          if (sp.burn) e.dots.push({ dps: sp.burn, t: 3, kind: 'burn' });
+        }
+      });
+      Sound.play('boom');
+    }
+    this.spellMode = null; this.uiDirty = true;
+    return true;
+  }
+
+  /* ---- daño ---- */
+  damage(e, amount, type, tower, pierce) {
+    if (!e.alive) return 0;
+    let d = amount;
+    if (type === 'phys') { const armor = e.corroded > 0 ? 0 : e.def.armor; d *= 1 - armor * (1 - (pierce || 0)); }
+    else if (type === 'magic') d *= 1 - e.def.mres;
+    d = Math.max(amount * 0.1, d);
+    e.hp -= d;
+    if (tower) tower.dmgDone += d;
+    if (e.hp <= 0) this.kill(e, tower);
+    return d;
+  }
+  kill(e, tower) {
+    if (!e.alive) return;
+    e.alive = false; this.stats.kills++; SAVE.stats.kills++;
+    if (tower) tower.kills++;
+    const goldMult = this.diff.gold * (1 + 0.08 * metaLvl('comercio')) * (1 + (tower ? this.stat(tower).goldBuff : 0)) * Math.sqrt(this.level.hpMult) * (1 + 0.02 * (this.wave - 1));
+    this.addGold(e.def.gold * goldMult, e.x, e.y - 10);
+    this.effects.push({ kind: 'death', x: e.x, y: e.y, r: e.def.r, t: 0.4, color: e.def.color });
+    if (e.def.onDeath) { for (let i = 0; i < e.def.onDeathN; i++) this.spawn(e.def.onDeath, e.path, Math.max(0, e.d - 10 - i * 14)); }
+    if (e.def.boss) {
+      this.msg(`${e.def.name} ha caído.`, '#ffe680');
+      this.effects.push({ kind: 'ring', x: e.x, y: e.y, r: 10, max: 90, t: 0.8, color: '#ffe680' });
+      if (e.type === 'boss_dragon') unlockAchievement('matadragones');
+      if (e.type === 'boss_canciller') unlockAchievement('justicia');
+    }
+    if (SAVE.stats.kills === 1) unlockAchievement('primera_sangre');
+    if (SAVE.stats.kills >= 500) unlockAchievement('cazador');
+    if (SAVE.stats.kills >= 5000) unlockAchievement('exterminador');
+    Sound.play('hit');
+  }
+  leak(e) {
+    e.alive = false; this.lives -= e.def.dmg; this.stats.livesLost += e.def.dmg;
+    this.floatText('-' + e.def.dmg + ' ♥', e.x, e.y - 8, '#ff6a6a', 15);
+    this.effects.push({ kind: 'flash', t: 0.25, color: 'rgba(255,60,60,0.25)' });
+    Sound.play('leak'); this.uiDirty = true;
+    if (this.lives <= 0) { this.lives = 0; this.finish(false); }
+  }
+
+  /* ---- objetivo ---- */
+  findTarget(t, s) {
+    const def = TOWERS[t.type];
+    let best = null, bestV = -Infinity;
+    for (const e of this.enemies) {
+      if (!e.alive) continue;
+      if (def.target === 'ground' && e.flying) continue;
+      if (dist(e, t) > s.range + e.def.r * 0.5) continue;
+      let v;
+      switch (t.targetMode) {
+        case 1: v = -e.d; break;            // último
+        case 2: v = e.hp; break;            // más fuerte
+        case 3: v = -e.hp; break;           // más débil
+        default: v = e.d;                    // primero
+      }
+      if (v > bestV) { bestV = v; best = e; }
+    }
+    return best;
+  }
+  /* ---- bucle ---- */
+  update(dt) {
+    if (this.paused || this.over) return;
+    this.time += dt;
+    if (this.buffDirty) this.recomputeBuffs();
+    SPELL_ORDER.forEach(k => { if (this.cooldowns[k] > 0) { this.cooldowns[k] -= dt; if (this.cooldowns[k] < 0) this.cooldowns[k] = 0; this.uiDirty = true; } });
+    if (this.logT > 0) this.logT -= dt;
+    this._uiTick = (this._uiTick || 0) + dt; if (this._uiTick > 1) { this._uiTick = 0; if (!this.selected && !this.buildType && !this.spellMode) this.uiDirty = true; }
+    // cuenta atrás entre oleadas
+    if (!this.waveActive && this.countdown > 0) {
+      const before = Math.ceil(this.countdown);
+      this.countdown -= dt;
+      if (Math.ceil(this.countdown) !== before) this.uiDirty = true;
+      if (this.countdown <= 0) { this.countdown = 0; this.startWave(false); }
+    }
+    // spawns
+    while (this.spawnQueue.length && this.spawnQueue[0].at <= this.time) {
+      const s = this.spawnQueue.shift(); this.spawn(s.type, s.path, 0);
+    }
+    // enemigos
+    for (const e of this.enemies) {
+      if (!e.alive) continue;
+      const path = this.map.paths[e.path];
+      // dots
+      for (let i = e.dots.length - 1; i >= 0; i--) {
+        const dot = e.dots[i]; dot.t -= dt;
+        this.damage(e, dot.dps * dt, dot.kind === 'poison' ? 'true' : 'magic', dot.tower, 0);
+        if (dot.t <= 0) e.dots.splice(i, 1);
+        if (!e.alive) break;
+      }
+      if (!e.alive) continue;
+      if (e.corroded > 0) e.corroded -= dt;
+      if (e.def.regen && e.hp < e.maxHp) e.hp = Math.min(e.maxHp, e.hp + e.def.regen * dt * (this.level.hpMult));
+      if (e.def.heal) {
+        for (const o of this.enemies) if (o !== e && o.alive && o.hp < o.maxHp && dist(o, e) < 70) o.hp = Math.min(o.maxHp, o.hp + e.def.heal * dt * this.level.hpMult);
+        if (Math.random() < dt * 2) this.effects.push({ kind: 'heal', x: e.x, y: e.y, t: 0.4 });
+      }
+      if (e.def.summon) {
+        const k = e.id; const t0 = this.summonTimers.get(k) || 0;
+        if (this.time - t0 > e.def.summonEvery) { this.summonTimers.set(k, this.time); this.spawn(e.def.summon, e.path, Math.max(0, e.d - 20)); this.effects.push({ kind: 'ring', x: e.x, y: e.y, r: 5, max: 40, t: 0.4, color: '#b090ff' }); }
+      }
+      // movimiento
+      let sp = e.def.speed;
+      if (e.frozen > 0) { e.frozen -= dt; sp = 0; }
+      else if (e.slowT > 0) { e.slowT -= dt; sp *= 1 - e.slow; if (e.slowT <= 0) e.slow = 0; }
+      // aura de ventisca
+      e.d += sp * dt;
+      if (e.d >= path.total) { this.leak(e); continue; }
+      const p = posOnPath(path, e.d); e.x = p.x; e.y = p.y; e.ang = p.ang;
+    }
+    // torres
+    for (const t of this.towers) {
+      const def = TOWERS[t.type];
+      if (def.dmgType === 'none') continue;
+      const s = this.stat(t);
+      if (s.aura) { // ventisca
+        for (const e of this.enemies) if (e.alive && dist(e, t) <= s.range) {
+          e.slow = Math.max(e.slow, s.slow); e.slowT = Math.max(e.slowT, 0.3); this.damage(e, s.dmg * dt, 'magic', t, 0);
+        }
+        t.angle += dt;
+        continue;
+      }
+      t.cooldown -= dt;
+      if (t.cooldown > 0) continue;
+      const target = this.findTarget(t, s);
+      if (!target) continue;
+      t.angle = Math.atan2(target.y - t.y, target.x - t.x);
+      t.cooldown = 1 / s.rate;
+      const shots = s.multishot || 1;
+      for (let i = 0; i < shots; i++) {
+        let tg = target;
+        if (i > 0) { const others = this.enemies.filter(e => e.alive && e !== target && dist(e, t) <= s.range && !(def.target === 'ground' && e.flying)); if (others.length) tg = others[Math.floor(Math.random() * others.length)]; }
+        this.projectiles.push({ x: t.x, y: t.y, target: tg, tower: t, s, type: t.type, speed: t.type === 'catapulta' ? 220 : t.type === 'alquimista' ? 260 : 520, tx: tg.x, ty: tg.y, life: 3, arc: t.type === 'catapulta' || t.type === 'alquimista' ? 1 : 0, t0: this.time, dur: 0 });
+        const pr = this.projectiles[this.projectiles.length - 1];
+        if (pr.arc) { pr.dur = dist(t, tg) / pr.speed; pr.x0 = t.x; pr.y0 = t.y; }
+      }
+      Sound.play(def.dmgType === 'magic' ? 'magic' : 'shoot');
+    }
+    // proyectiles
+    for (let i = this.projectiles.length - 1; i >= 0; i--) {
+      const p = this.projectiles[i];
+      p.life -= dt;
+      if (p.target.alive) { p.tx = p.target.x; p.ty = p.target.y; }
+      if (p.arc) {
+        const k = clamp((this.time - p.t0) / Math.max(0.05, p.dur), 0, 1);
+        p.x = p.x0 + (p.tx - p.x0) * k; p.y = p.y0 + (p.ty - p.y0) * k - Math.sin(k * Math.PI) * 50;
+        if (k >= 1) { this.impact(p); this.projectiles.splice(i, 1); }
+        continue;
+      }
+      const dx = p.tx - p.x, dy = p.ty - p.y, dd = Math.hypot(dx, dy);
+      const step = p.speed * dt;
+      if (dd <= step || p.life <= 0) { p.x = p.tx; p.y = p.ty; this.impact(p); this.projectiles.splice(i, 1); continue; }
+      p.x += dx / dd * step; p.y += dy / dd * step;
+    }
+    // efectos y textos
+    for (let i = this.effects.length - 1; i >= 0; i--) { const f = this.effects[i]; f.t -= dt; if (f.t <= 0) this.effects.splice(i, 1); }
+    for (let i = this.texts.length - 1; i >= 0; i--) { const f = this.texts[i]; f.t -= dt; f.y -= 22 * dt; if (f.t <= 0) this.texts.splice(i, 1); }
+    // limpieza
+    if (this.enemies.some(e => !e.alive)) this.enemies = this.enemies.filter(e => e.alive);
+    if (this.waveActive && !this.spawnQueue.length && !this.enemies.length) this.waveCleared();
+  }
+  impact(p) {
+    const s = p.s, t = p.tower, def = TOWERS[p.type];
+    const dmgType = def.dmgType;
+    const applyHit = (e, mult) => {
+      if (!e.alive) return;
+      let dmg = s.dmg * (mult || 1);
+      if (s.crit && Math.random() < s.crit) { dmg *= 3; this.floatText('¡Crítico!', e.x, e.y - 14, '#ffb060', 11); }
+      this.damage(e, dmg, dmgType, t, s.pierce || 0);
+      if (!e.alive) return;
+      if (s.slow) { if (s.slow >= e.slow) { e.slow = s.slow; e.slowT = Math.max(e.slowT, s.slowT || 2); } }
+      if (s.freeze && Math.random() < s.freeze) { e.frozen = Math.max(e.frozen, e.def.boss ? 0.6 : 1.5); this.effects.push({ kind: 'ice', x: e.x, y: e.y, t: 0.5 }); }
+      if (s.poison) { const ex = e.dots.find(d => d.kind === 'poison' && d.tower === t); if (ex) { ex.t = s.poisonT; ex.dps = Math.max(ex.dps, s.poison); } else e.dots.push({ dps: s.poison, t: s.poisonT, kind: 'poison', tower: t }); }
+      if (s.burn) { const ex = e.dots.find(d => d.kind === 'burn' && d.tower === t); if (ex) ex.t = 3; else e.dots.push({ dps: s.burn, t: 3, kind: 'burn', tower: t }); }
+      if (s.corrode) e.corroded = 4;
+    };
+    if (s.splash) {
+      const groundOnly = def.target === 'ground';
+      this.effects.push({ kind: 'ring', x: p.x, y: p.y, r: 4, max: s.splash, t: 0.3, color: p.type === 'alquimista' ? '#7fe89a' : p.type === 'mago' ? '#c88aff' : s.burn ? '#ff9a3a' : '#e0d0a0' });
+      for (const e of this.enemies) if (e.alive && !(groundOnly && e.flying) && dist(e, p) <= s.splash + e.def.r) applyHit(e, 1);
+      if (p.type === 'catapulta') Sound.play('boom');
+    } else if (s.chain) {
+      let cur = p.target, hitSet = new Set(); let prev = { x: p.x, y: p.y }; let mult = 1;
+      for (let i = 0; i < s.chain && cur; i++) {
+        hitSet.add(cur); this.effects.push({ kind: 'bolt', x1: prev.x, y1: prev.y, x2: cur.x, y2: cur.y, t: 0.18 });
+        applyHit(cur, mult); prev = cur; mult *= 0.75;
+        let next = null, bd = 90;
+        for (const e of this.enemies) if (e.alive && !hitSet.has(e) && dist(e, prev) < bd) { bd = dist(e, prev); next = e; }
+        cur = next;
+      }
+    } else {
+      if (p.target.alive && dist(p, p.target) < p.target.def.r + 10) applyHit(p.target, 1);
+      this.effects.push({ kind: 'spark', x: p.x, y: p.y, t: 0.15, color: dmgType === 'magic' ? '#c88aff' : '#fff' });
+    }
+  }
+
+  /* ---- render ---- */
+  render() {
+    const g = this.ctx;
+    g.clearRect(0, 0, W, H);
+    g.drawImage(this.mapCache, 0, 0);
+    // marcas de entrada/salida
+    this.map.paths.forEach(p => {
+      const a = p.pts[0];
+      g.fillStyle = 'rgba(200,40,40,0.55)'; g.beginPath(); g.arc(clamp(a.x, 6, W - 6), clamp(a.y, 6, H - 6), 7, 0, 6.28); g.fill();
+    });
+    // celda de construcción
+    if (this.hover && this.buildType) {
+      const { c, r } = this.hover; const ok = this.canBuild(c, r);
+      g.fillStyle = ok ? 'rgba(120,255,120,0.28)' : 'rgba(255,80,80,0.28)'; g.fillRect(c * TILE, r * TILE, TILE, TILE);
+      if (ok) {
+        const def = TOWERS[this.buildType]; const range = def.levels[0].range * (1 + 0.04 * metaLvl('vigia'));
+        g.strokeStyle = 'rgba(255,255,255,0.5)'; g.setLineDash([5, 4]); g.beginPath(); g.arc(c * TILE + TILE / 2, r * TILE + TILE / 2, range, 0, 6.28); g.stroke(); g.setLineDash([]);
+        g.globalAlpha = 0.55; drawTower(g, { type: this.buildType, x: c * TILE + TILE / 2, y: r * TILE + TILE / 2, lvl: 0, spec: -1, angle: -Math.PI / 2 }, this.time); g.globalAlpha = 1;
+      }
+    }
+    if (this.hover && this.spellMode) {
+      const sp = SPELLS[this.spellMode];
+      if (sp.radius) { g.fillStyle = sp.color + '44'; g.strokeStyle = sp.color; g.beginPath(); g.arc(this.hover.x, this.hover.y, sp.radius, 0, 6.28); g.fill(); g.stroke(); }
+    }
+    // rango seleccionado
+    if (this.selected && this.towers.includes(this.selected)) {
+      const t = this.selected, s = this.stat(t);
+      g.fillStyle = 'rgba(255,255,255,0.08)'; g.strokeStyle = 'rgba(255,255,255,0.6)';
+      g.beginPath(); g.arc(t.x, t.y, s.range, 0, 6.28); g.fill(); g.stroke();
+    }
+    // torres
+    for (const t of this.towers) drawTower(g, t, this.time);
+    // enemigos (terrestres luego voladores)
+    const ground = this.enemies.filter(e => !e.flying), air = this.enemies.filter(e => e.flying);
+    for (const e of ground) drawEnemy(g, e, this.time);
+    // proyectiles
+    for (const p of this.projectiles) drawProjectile(g, p);
+    for (const e of air) drawEnemy(g, e, this.time);
+    // efectos
+    for (const f of this.effects) drawEffect(g, f);
+    // textos
+    g.textAlign = 'center'; g.font = 'bold 13px sans-serif';
+    for (const tx of this.texts) { g.globalAlpha = clamp(tx.t, 0, 1); g.font = `bold ${tx.size}px sans-serif`; g.fillStyle = '#000'; g.fillText(tx.txt, tx.x + 1, tx.y + 1); g.fillStyle = tx.color; g.fillText(tx.txt, tx.x, tx.y); }
+    g.globalAlpha = 1;
+    // aviso de próxima oleada
+    if (!this.waveActive && !this.over) {
+      g.fillStyle = 'rgba(0,0,0,0.55)'; g.fillRect(W / 2 - 190, 8, 380, 36);
+      g.fillStyle = '#fff'; g.font = 'bold 15px sans-serif';
+      if (this.countdown < 0 && this.wave === 0) g.fillText('Coloca tus torres y pulsa «Siguiente oleada» (Espacio)', W / 2, 31);
+      else if (this.countdown < 0) g.fillText('Pulsa «Siguiente oleada» (Espacio)', W / 2, 31);
+      else g.fillText(`Siguiente oleada en ${Math.ceil(this.countdown)} s  ·  Espacio para adelantar (+oro)`, W / 2, 31);
+    }
+    if (this.paused && !this.over) {
+      g.fillStyle = 'rgba(0,0,0,0.5)'; g.fillRect(0, 0, W, H);
+      g.fillStyle = '#fff'; g.font = 'bold 40px serif'; g.fillText('PAUSA', W / 2, H / 2); g.font = '16px sans-serif'; g.fillText('Pulsa P o Esc para continuar', W / 2, H / 2 + 32);
+    }
+  }
+}
+
+/* ==================== DIBUJO ==================== */
+function drawTower(g, t, time) {
+  const def = TOWERS[t.type];
+  const x = t.x, y = t.y;
+  g.save();
+  // sombra y base
+  g.fillStyle = 'rgba(0,0,0,0.25)'; g.beginPath(); g.ellipse(x + 2, y + 6, 16, 8, 0, 0, 6.28); g.fill();
+  g.fillStyle = '#7d7468'; roundRect(g, x - 15, y - 13, 30, 28, 5); g.fill();
+  g.fillStyle = '#9a9184'; roundRect(g, x - 15, y - 15, 30, 26, 5); g.fill();
+  g.fillStyle = 'rgba(0,0,0,0.12)'; g.fillRect(x - 10, y - 10, 6, 4); g.fillRect(x + 2, y - 4, 8, 4); g.fillRect(x - 6, y + 3, 5, 4);
+  if (t.spec >= 0) { g.strokeStyle = '#ffe680'; g.lineWidth = 2; roundRect(g, x - 16, y - 16, 32, 28, 6); g.stroke(); }
+  g.translate(x, y - 3);
+  const c = def.color;
+  switch (t.type) {
+    case 'arquero': {
+      g.rotate(t.angle);
+      g.fillStyle = '#c8b090'; g.beginPath(); g.arc(0, 0, 9, 0, 6.28); g.fill();
+      g.strokeStyle = '#5a3a1a'; g.lineWidth = 2.5; g.beginPath(); g.arc(4, 0, 9, -1.3, 1.3); g.stroke();
+      g.strokeStyle = '#e8e0c8'; g.lineWidth = 1; g.beginPath(); g.moveTo(6.5, -8.5); g.lineTo(6.5, 8.5); g.stroke();
+      g.strokeStyle = '#3a2a1a'; g.lineWidth = 2; g.beginPath(); g.moveTo(-2, 0); g.lineTo(11, 0); g.stroke();
+      break; }
+    case 'catapulta': {
+      g.rotate(t.angle);
+      g.fillStyle = '#6a4a2a'; g.fillRect(-10, -8, 20, 16);
+      g.fillStyle = '#4a3018'; g.fillRect(-10, -9, 4, 18); g.fillRect(6, -9, 4, 18);
+      g.strokeStyle = '#8a6a3a'; g.lineWidth = 3; g.beginPath(); g.moveTo(-8, 0); g.lineTo(10, 0); g.stroke();
+      g.fillStyle = '#444'; g.beginPath(); g.arc(-8, 0, 4, 0, 6.28); g.fill();
+      break; }
+    case 'mago': {
+      g.fillStyle = c; g.beginPath(); g.arc(0, 0, 10, 0, 6.28); g.fill();
+      g.fillStyle = '#b090ff'; g.beginPath(); g.moveTo(0, -12); g.lineTo(3, -3); g.lineTo(12, 0); g.lineTo(3, 3); g.lineTo(0, 12); g.lineTo(-3, 3); g.lineTo(-12, 0); g.lineTo(-3, -3); g.closePath(); g.fill();
+      g.fillStyle = '#fff'; g.beginPath(); g.arc(0, 0, 3 + Math.sin(time * 5) * 1, 0, 6.28); g.fill();
+      break; }
+    case 'hielo': {
+      g.rotate(time * (t.spec === 0 ? 1.2 : 0.3));
+      g.fillStyle = c; g.beginPath(); g.moveTo(0, -13); g.lineTo(10, 0); g.lineTo(0, 13); g.lineTo(-10, 0); g.closePath(); g.fill();
+      g.fillStyle = '#e8f8ff'; g.beginPath(); g.moveTo(0, -7); g.lineTo(5, 0); g.lineTo(0, 7); g.lineTo(-5, 0); g.closePath(); g.fill();
+      break; }
+    case 'ballesta': {
+      g.rotate(t.angle);
+      g.fillStyle = '#4a3a2a'; g.fillRect(-12, -3, 24, 6);
+      g.strokeStyle = '#7a6a5a'; g.lineWidth = 3; g.beginPath(); g.moveTo(4, -12); g.lineTo(4, 12); g.stroke();
+      g.strokeStyle = '#e8e0c8'; g.lineWidth = 1; g.beginPath(); g.moveTo(4, -12); g.lineTo(-6, 0); g.lineTo(4, 12); g.stroke();
+      g.fillStyle = '#222'; g.fillRect(-4, -1.5, 16, 3);
+      break; }
+    case 'alquimista': {
+      g.fillStyle = '#3a6a4a'; g.beginPath(); g.arc(0, 0, 10, 0, 6.28); g.fill();
+      g.fillStyle = c; g.beginPath(); g.moveTo(-3, -11); g.lineTo(3, -11); g.lineTo(3, -5); g.lineTo(8, 6); g.lineTo(-8, 6); g.lineTo(-3, -5); g.closePath(); g.fill();
+      g.fillStyle = '#c8ffd8'; g.beginPath(); g.arc(-2 + Math.sin(time * 4) * 2, 1, 2, 0, 6.28); g.fill();
+      break; }
+    case 'templo': {
+      g.fillStyle = '#e8e0c8'; g.fillRect(-11, -6, 22, 14);
+      g.fillStyle = c; g.beginPath(); g.moveTo(0, -16); g.lineTo(13, -6); g.lineTo(-13, -6); g.closePath(); g.fill();
+      g.fillStyle = '#c9a227'; g.fillRect(-1.5, -22, 3, 8); g.fillRect(-4, -20, 8, 3);
+      g.strokeStyle = 'rgba(255,230,120,' + (0.3 + Math.sin(time * 3) * 0.15) + ')'; g.lineWidth = 2; g.beginPath(); g.arc(0, 0, 18, 0, 6.28); g.stroke();
+      break; }
+  }
+  g.restore();
+  // nivel
+  for (let i = 0; i < 3; i++) { g.fillStyle = i <= t.lvl ? '#ffe680' : 'rgba(0,0,0,0.3)'; g.fillRect(x - 8 + i * 6, y + 14, 4, 3); }
+}
+function roundRect(g, x, y, w, h, r) { g.beginPath(); g.moveTo(x + r, y); g.lineTo(x + w - r, y); g.quadraticCurveTo(x + w, y, x + w, y + r); g.lineTo(x + w, y + h - r); g.quadraticCurveTo(x + w, y + h, x + w - r, y + h); g.lineTo(x + r, y + h); g.quadraticCurveTo(x, y + h, x, y + h - r); g.lineTo(x, y + r); g.quadraticCurveTo(x, y, x + r, y); g.closePath(); }
+
+function drawEnemy(g, e, time) {
+  const d = e.def, r = d.r;
+  let x = e.x, y = e.y;
+  g.save();
+  if (e.flying) { g.fillStyle = 'rgba(0,0,0,0.2)'; g.beginPath(); g.ellipse(x + 4, y + 14, r * 0.9, r * 0.4, 0, 0, 6.28); g.fill(); y -= 10 + Math.sin(time * 6 + e.wobble) * 2; }
+  else { g.fillStyle = 'rgba(0,0,0,0.22)'; g.beginPath(); g.ellipse(x, y + r * 0.6, r, r * 0.45, 0, 0, 6.28); g.fill(); }
+  g.translate(x, y);
+  let col = d.color;
+  if (e.frozen > 0) col = '#9fd8ff';
+  const bob = Math.sin(time * 10 + e.wobble) * 1.5;
+  switch (d.shape) {
+    case 'goblin':
+      g.fillStyle = col; g.beginPath(); g.arc(0, bob, r, 0, 6.28); g.fill();
+      g.beginPath(); g.moveTo(-r, bob - 2); g.lineTo(-r - 6, bob - 8); g.lineTo(-r + 3, bob - 6); g.closePath(); g.fill();
+      g.beginPath(); g.moveTo(r, bob - 2); g.lineTo(r + 6, bob - 8); g.lineTo(r - 3, bob - 6); g.closePath(); g.fill();
+      eyes(g, bob, r, '#ff4040'); break;
+    case 'lobo':
+      g.rotate(e.ang); g.fillStyle = col; g.beginPath(); g.ellipse(0, 0, r * 1.5, r * 0.85, 0, 0, 6.28); g.fill();
+      g.beginPath(); g.moveTo(r * 1.2, -4); g.lineTo(r * 2, 0); g.lineTo(r * 1.2, 4); g.closePath(); g.fill();
+      g.fillStyle = '#ff5050'; g.beginPath(); g.arc(r * 0.9, -3, 1.6, 0, 6.28); g.arc(r * 0.9, 3, 1.6, 0, 6.28); g.fill(); break;
+    case 'orco': case 'orco_pesado':
+      g.fillStyle = col; g.beginPath(); g.arc(0, bob, r, 0, 6.28); g.fill();
+      if (d.shape === 'orco_pesado') { g.fillStyle = '#9a9aa0'; g.beginPath(); g.arc(0, bob, r, Math.PI, 6.28); g.fill(); g.fillStyle = '#6a6a70'; g.fillRect(-r, bob - 1, r * 2, 3); }
+      g.fillStyle = '#fff'; g.fillRect(-5, bob + 3, 3, 5); g.fillRect(2, bob + 3, 3, 5);
+      eyes(g, bob, r, '#ffe040'); break;
+    case 'esqueleto':
+      g.fillStyle = col; g.beginPath(); g.arc(0, bob - 2, r * 0.8, 0, 6.28); g.fill(); g.fillRect(-r * 0.5, bob + 2, r, r * 0.6);
+      g.fillStyle = '#222'; g.fillRect(-5, bob - 5, 3, 4); g.fillRect(2, bob - 5, 3, 4); g.fillRect(-3, bob + 1, 6, 1.5); break;
+    case 'chaman':
+      g.fillStyle = col; g.beginPath(); g.arc(0, bob, r, 0, 6.28); g.fill();
+      g.strokeStyle = '#5a3a1a'; g.lineWidth = 2; g.beginPath(); g.moveTo(r, bob + 6); g.lineTo(r + 4, bob - 14); g.stroke();
+      g.fillStyle = '#7fff9a'; g.beginPath(); g.arc(r + 4, bob - 15, 3, 0, 6.28); g.fill();
+      eyes(g, bob, r, '#c8ffc8'); break;
+    case 'murcielago': case 'gargola': case 'espectro': case 'dragon': {
+      const wing = Math.sin(time * (d.shape === 'murcielago' ? 18 : 8) + e.wobble) * 0.5;
+      g.fillStyle = col;
+      if (d.shape === 'espectro') g.globalAlpha = 0.7 + Math.sin(time * 4) * 0.15;
+      [-1, 1].forEach(s => { g.save(); g.scale(s, 1); g.rotate(wing * 0.6); g.beginPath(); g.moveTo(0, 0); g.lineTo(r * 2, -r * 0.8); g.lineTo(r * 2.2, r * 0.3); g.lineTo(r * 0.8, r * 0.6); g.closePath(); g.fill(); g.restore(); });
+      g.beginPath(); g.arc(0, 0, r * 0.85, 0, 6.28); g.fill();
+      if (d.shape === 'dragon') { g.fillStyle = '#ff9a3a'; g.beginPath(); g.moveTo(-3, -r * 0.9); g.lineTo(0, -r * 1.6); g.lineTo(3, -r * 0.9); g.closePath(); g.fill(); }
+      eyes(g, 0, r * 0.85, d.shape === 'espectro' ? '#fff' : '#ffe040'); break; }
+    case 'troll': case 'ogro':
+      g.fillStyle = col; g.beginPath(); g.arc(0, bob, r, 0, 6.28); g.fill();
+      g.fillStyle = 'rgba(0,0,0,0.25)'; g.beginPath(); g.arc(-r * 0.5, bob + r * 0.5, r * 0.4, 0, 6.28); g.arc(r * 0.5, bob + r * 0.5, r * 0.4, 0, 6.28); g.fill();
+      g.strokeStyle = '#5a4a3a'; g.lineWidth = 4; g.beginPath(); g.moveTo(r * 0.6, bob); g.lineTo(r * 1.6, bob - r); g.stroke();
+      eyes(g, bob, r, '#ff8040'); break;
+    case 'nigromante':
+      g.fillStyle = col; g.beginPath(); g.moveTo(0, bob - r * 1.4); g.lineTo(r, bob + r * 0.6); g.lineTo(-r, bob + r * 0.6); g.closePath(); g.fill();
+      g.beginPath(); g.arc(0, bob - r * 0.2, r * 0.6, 0, 6.28); g.fill();
+      g.fillStyle = '#b090ff'; g.beginPath(); g.arc(-3, bob - r * 0.3, 1.8, 0, 6.28); g.arc(3, bob - r * 0.3, 1.8, 0, 6.28); g.fill(); break;
+    case 'jinete':
+      g.rotate(e.ang); g.fillStyle = '#6a4a2a'; g.beginPath(); g.ellipse(0, 0, r * 1.5, r * 0.75, 0, 0, 6.28); g.fill();
+      g.fillStyle = col; g.beginPath(); g.arc(-2, -4, r * 0.65, 0, 6.28); g.fill();
+      g.strokeStyle = '#ddd'; g.lineWidth = 2; g.beginPath(); g.moveTo(2, -4); g.lineTo(r * 1.8, -8); g.stroke(); break;
+    default:
+      g.fillStyle = col; g.beginPath(); g.arc(0, bob, r, 0, 6.28); g.fill();
+  }
+  g.globalAlpha = 1;
+  // corona de jefe
+  if (d.boss) { g.fillStyle = '#ffd700'; g.beginPath(); g.moveTo(-8, -r - 4); g.lineTo(-8, -r - 12); g.lineTo(-4, -r - 7); g.lineTo(0, -r - 14); g.lineTo(4, -r - 7); g.lineTo(8, -r - 12); g.lineTo(8, -r - 4); g.closePath(); g.fill(); }
+  // estados
+  if (e.dots.some(x => x.kind === 'poison')) { g.fillStyle = '#7fe89a'; g.beginPath(); g.arc(-r * 0.6, -r - 2 + Math.sin(time * 8) * 2, 2.5, 0, 6.28); g.fill(); }
+  if (e.dots.some(x => x.kind === 'burn')) { g.fillStyle = '#ff8a3a'; g.beginPath(); g.moveTo(r * 0.6, -r - 2); g.lineTo(r * 0.6 + 3, -r - 9 + Math.sin(time * 12) * 2); g.lineTo(r * 0.6 + 6, -r - 2); g.closePath(); g.fill(); }
+  if (e.slowT > 0 && e.frozen <= 0) { g.strokeStyle = 'rgba(160,220,255,0.8)'; g.lineWidth = 1.5; g.beginPath(); g.arc(0, 0, r + 3, 0, 6.28); g.stroke(); }
+  if (e.corroded > 0) { g.strokeStyle = 'rgba(120,255,120,0.8)'; g.lineWidth = 1.5; g.beginPath(); g.arc(0, 0, r + 3, 0, 6.28); g.stroke(); }
+  g.restore();
+  // barra de vida
+  if (e.hp < e.maxHp) {
+    const bw = d.boss ? 44 : 22, bh = d.boss ? 5 : 3;
+    g.fillStyle = 'rgba(0,0,0,0.6)'; g.fillRect(x - bw / 2, y - r - 8 - (d.boss ? 10 : 0), bw, bh);
+    g.fillStyle = e.hp / e.maxHp > 0.5 ? '#5ad35a' : e.hp / e.maxHp > 0.25 ? '#e8c840' : '#e85a40';
+    g.fillRect(x - bw / 2, y - r - 8 - (d.boss ? 10 : 0), bw * clamp(e.hp / e.maxHp, 0, 1), bh);
+  }
+}
+function eyes(g, bob, r, col) { g.fillStyle = col; g.beginPath(); g.arc(-r * 0.35, bob - r * 0.2, 2, 0, 6.28); g.arc(r * 0.35, bob - r * 0.2, 2, 0, 6.28); g.fill(); }
+
+function drawProjectile(g, p) {
+  g.save(); g.translate(p.x, p.y);
+  switch (p.type) {
+    case 'arquero': case 'ballesta': {
+      const a = Math.atan2(p.ty - p.y, p.tx - p.x); g.rotate(a);
+      g.strokeStyle = p.type === 'ballesta' ? '#222' : '#5a3a1a'; g.lineWidth = p.type === 'ballesta' ? 3 : 2; g.beginPath(); g.moveTo(-8, 0); g.lineTo(6, 0); g.stroke();
+      g.fillStyle = '#ddd'; g.beginPath(); g.moveTo(6, -2); g.lineTo(10, 0); g.lineTo(6, 2); g.closePath(); g.fill(); break; }
+    case 'catapulta': g.fillStyle = p.s.burn ? '#ff7a2a' : '#555'; g.beginPath(); g.arc(0, 0, 6, 0, 6.28); g.fill(); break;
+    case 'mago': g.fillStyle = p.s.splash ? '#ff8a3a' : '#c88aff'; g.beginPath(); g.arc(0, 0, 5, 0, 6.28); g.fill(); g.fillStyle = '#fff'; g.beginPath(); g.arc(0, 0, 2, 0, 6.28); g.fill(); break;
+    case 'hielo': g.fillStyle = '#bfefff'; g.beginPath(); g.moveTo(0, -6); g.lineTo(5, 0); g.lineTo(0, 6); g.lineTo(-5, 0); g.closePath(); g.fill(); break;
+    case 'alquimista': g.fillStyle = '#5fbf7a'; g.beginPath(); g.arc(0, 0, 5, 0, 6.28); g.fill(); g.fillStyle = '#c8ffd8'; g.fillRect(-2, -8, 4, 4); break;
+  }
+  g.restore();
+}
+function drawEffect(g, f) {
+  g.save();
+  switch (f.kind) {
+    case 'ring': { const k = 1 - f.t / 0.5; const rr = f.r + (f.max - f.r) * clamp(k * 1.6, 0, 1); g.globalAlpha = clamp(f.t * 2, 0, 1); g.strokeStyle = f.color; g.lineWidth = 3; g.beginPath(); g.arc(f.x, f.y, rr, 0, 6.28); g.stroke(); g.globalAlpha *= 0.3; g.fillStyle = f.color; g.fill(); break; }
+    case 'death': g.globalAlpha = f.t * 2; g.fillStyle = f.color; for (let i = 0; i < 6; i++) { const a = i * 1.05, k = (0.4 - f.t) * 60; g.beginPath(); g.arc(f.x + Math.cos(a) * k, f.y + Math.sin(a) * k, 3, 0, 6.28); g.fill(); } break;
+    case 'spark': g.globalAlpha = f.t * 6; g.fillStyle = f.color; g.beginPath(); g.arc(f.x, f.y, 4, 0, 6.28); g.fill(); break;
+    case 'bolt': g.globalAlpha = f.t * 5; g.strokeStyle = '#d8b0ff'; g.lineWidth = 3; g.beginPath(); g.moveTo(f.x1, f.y1); const mx = (f.x1 + f.x2) / 2 + (Math.random() - 0.5) * 12, my = (f.y1 + f.y2) / 2 + (Math.random() - 0.5) * 12; g.lineTo(mx, my); g.lineTo(f.x2, f.y2); g.stroke(); g.strokeStyle = '#fff'; g.lineWidth = 1; g.stroke(); break;
+    case 'flash': g.fillStyle = f.color; g.globalAlpha = clamp(f.t * 2, 0, 1); g.fillRect(0, 0, W, H); break;
+    case 'heal': g.globalAlpha = f.t * 2; g.fillStyle = '#7fff9a'; g.font = 'bold 12px sans-serif'; g.textAlign = 'center'; g.fillText('+', f.x + 8, f.y - 14 - (0.4 - f.t) * 30); break;
+    case 'ice': g.globalAlpha = f.t * 2; g.strokeStyle = '#dff6ff'; g.lineWidth = 2; for (let i = 0; i < 3; i++) { g.beginPath(); g.moveTo(f.x - 10, f.y - 10 + i * 10); g.lineTo(f.x + 10, f.y + 10 - i * 10); g.stroke(); } break;
+    case 'meteor': { const k = 1 - f.t / 0.6; g.globalAlpha = 1 - k; g.fillStyle = '#ff7a3a'; g.beginPath(); g.arc(f.x + (1 - k) * 120, f.y - (1 - k) * 260, 14, 0, 6.28); g.fill(); g.fillStyle = '#ffe080'; g.beginPath(); g.arc(f.x + (1 - k) * 120, f.y - (1 - k) * 260, 7, 0, 6.28); g.fill(); break; }
+  }
+  g.restore();
+}
+
+/* ==================== INTERFAZ ==================== */
+const $ = id => document.getElementById(id);
+let game = null, currentLevel = null, currentDiff = 'normal', rafId = null, lastTs = 0;
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.toggle('active', s.id === id));
+  Sound.play('click');
+}
+function toast(title, text) {
+  const d = document.createElement('div'); d.className = 'toast'; d.innerHTML = `<b>${title}</b>${text}`;
+  $('toasts').appendChild(d); setTimeout(() => d.remove(), 4500);
+}
+function unlockAchievement(id) {
+  if (SAVE.achievements[id]) return;
+  const a = ACHIEVEMENTS.find(x => x.id === id); if (!a) return;
+  SAVE.achievements[id] = true; SAVE.gloria += a.gloria; SAVE.stats.gloriaTotal += a.gloria; persist();
+  toast('Logro desbloqueado', `${a.name} · +${a.gloria} Gloria`);
+  Sound.play('coin');
+}
+function modal(html) { $('modal-box').innerHTML = html; $('modal').classList.add('active'); }
+function closeModal() { $('modal').classList.remove('active'); }
+function starsHtml(n, big) { let s = ''; for (let i = 0; i < 3; i++) s += `<span class="${i < n ? '' : 'off'}">★</span>`; return s; }
+
+/* ---------- iconos ---------- */
+function towerIcon(type, size) {
+  const cv = document.createElement('canvas'); cv.width = size; cv.height = size;
+  const g = cv.getContext('2d'); g.save(); g.translate(size / 2, size / 2); g.scale(size / 44, size / 44); g.translate(-0, 2);
+  drawTower(g, { type, x: 0, y: 0, lvl: 0, spec: -1, angle: -Math.PI / 2 }, 1); g.restore();
+  return cv;
+}
+function enemyIcon(type, size) {
+  const cv = document.createElement('canvas'); cv.width = size; cv.height = size;
+  const g = cv.getContext('2d'); const def = ENEMIES[type]; const sc = Math.min(1, 16 / def.r) * size / 48;
+  g.save(); g.translate(size / 2, size / 2 + (def.flying ? 6 : 0)); g.scale(sc, sc);
+  drawEnemy(g, { def, type, x: 0, y: 0, ang: 0, hp: 1, maxHp: 1, flying: false, dots: [], slowT: 0, frozen: 0, corroded: 0, wobble: 0 }, 1); g.restore();
+  return cv;
+}
+function drawCrest() {
+  const g = $('crest').getContext('2d');
+  g.fillStyle = '#c9a227'; g.beginPath(); g.moveTo(45, 6); g.lineTo(84, 18); g.lineTo(78, 56); g.lineTo(45, 86); g.lineTo(12, 56); g.lineTo(6, 18); g.closePath(); g.fill();
+  g.fillStyle = '#3a2a10'; g.beginPath(); g.moveTo(45, 13); g.lineTo(77, 23); g.lineTo(72, 54); g.lineTo(45, 78); g.lineTo(18, 54); g.lineTo(13, 23); g.closePath(); g.fill();
+  g.fillStyle = '#e8e0c8'; g.fillRect(30, 40, 30, 26); for (let i = 30; i < 60; i += 8) g.fillRect(i, 33, 5, 8);
+  g.fillStyle = '#7a3030'; g.fillRect(41, 52, 8, 14);
+}
+
+/* ---------- MENÚ ---------- */
+function renderMenu() {
+  $('menu-stats').innerHTML = `Estrellas: <b style="color:var(--gold)">${totalStars()}/30</b> · Gloria: <b style="color:var(--gold)">${SAVE.gloria}</b> · Enemigos abatidos: <b>${fmt(SAVE.stats.kills)}</b> · Logros: <b>${Object.keys(SAVE.achievements).length}/${ACHIEVEMENTS.length}</b>` +
+    (SAVE.stats.bestEndless ? ` · Mejor asedio: <b>oleada ${SAVE.stats.bestEndless}</b>` : '');
+  $('b-endless').disabled = !SAVE.unlocked.endless;
+  $('b-endless').textContent = SAVE.unlocked.endless ? 'Asedio infinito' : 'Asedio infinito (completa la campaña)';
+  $('b-sound').textContent = 'Sonido: ' + (SAVE.settings.sound ? 'activado' : 'desactivado');
+  $('b-campaign').textContent = totalStars() > 0 ? 'Continuar campaña' : 'Nueva campaña';
+}
+
+/* ---------- CAMPAÑA ---------- */
+function renderCampaign() {
+  $('camp-stars').innerHTML = `Estrellas: <b>${totalStars()}/30</b> · Gloria: <b>${SAVE.gloria}</b>`;
+  const dd = $('diffs'); dd.innerHTML = '';
+  Object.entries(DIFFS).forEach(([k, d]) => {
+    if (k === 'pesadilla' && !SAVE.unlocked.pesadilla) return;
+    const b = document.createElement('button'); b.textContent = d.name; b.title = d.desc; b.className = k === currentDiff ? 'sel' : '';
+    b.onclick = () => { currentDiff = k; renderCampaign(); }; dd.appendChild(b);
+  });
+  const box = $('levels'); box.innerHTML = '';
+  LEVELS.forEach(l => {
+    const d = document.createElement('div'); const unlocked = levelUnlocked(l.id);
+    d.className = 'lvl' + (unlocked ? '' : ' locked');
+    const st = SAVE.stars[l.id] || 0;
+    const unl = []; if (l.unlock.tower) unl.push('Torre: ' + TOWERS[l.unlock.tower].name); if (l.unlock.spell) unl.push('Hechizo: ' + SPELLS[l.unlock.spell].name); if (l.unlock.endless) unl.push('Asedio infinito y dificultad Pesadilla');
+    const done = SAVE.diffDone[l.id] || {};
+    d.innerHTML = `<div class="num">Capítulo ${l.id} · ${l.waves} oleadas</div><h3>${l.name}</h3><div class="stars">${starsHtml(st)}</div>
+      <div class="meta">Jefe: ${ENEMIES[l.boss].name}${done.dificil ? ' · <span style="color:var(--blue)">Difícil ✓</span>' : ''}${done.pesadilla ? ' · <span style="color:var(--red)">Pesadilla ✓</span>' : ''}</div>
+      ${unl.length ? `<div class="unlock">Recompensa: ${unl.join(' · ')}</div>` : ''}`;
+    if (unlocked) d.onclick = () => openStory(l, currentDiff);
+    box.appendChild(d);
+  });
+  if (SAVE.unlocked.endless) {
+    const d = document.createElement('div'); d.className = 'lvl endless';
+    d.innerHTML = `<div class="num">Modo extra</div><h3>Asedio infinito</h3><div class="meta">Oleadas sin fin, jefes cada 10. Mejor marca: oleada ${SAVE.stats.bestEndless}</div><div class="unlock">+1 Gloria cada 10 oleadas</div>`;
+    d.onclick = () => openStory(ENDLESS, currentDiff); box.appendChild(d);
+  }
+}
+function openStory(level, diff) {
+  const s = level.story;
+  modal(`<h2>${level.id === 99 ? '' : 'Capítulo ' + level.id + ': '}${level.name}</h2><div class="sub">${DIFFS[diff].name} · ${level.waves === Infinity ? 'oleadas infinitas' : level.waves + ' oleadas'} · ${level.gold + metaLvl('tesoro') * 45} de oro inicial</div>
+    ${s.intro.map(p => `<p>${p}</p>`).join('')}
+    <div class="btns"><button id="m-cancel">Volver</button><button class="primary" id="m-start">¡A las murallas!</button></div>`);
+  $('m-cancel').onclick = closeModal;
+  $('m-start').onclick = () => { closeModal(); startLevel(level, diff); };
+}
+
+/* ---------- MEJORAS ---------- */
+function renderMeta() {
+  $('meta-gloria').textContent = SAVE.gloria;
+  const box = $('metas'); box.innerHTML = '';
+  META.forEach(m => {
+    const lv = metaLvl(m.id); const next = lv < m.max ? m.costs[lv] : null;
+    const d = document.createElement('div'); d.className = 'meta';
+    d.innerHTML = `<div class="ico">${m.icon}</div><div class="body"><h3>${m.name}</h3><div class="per">${m.per} por nivel</div>
+      <div class="lv">${Array.from({ length: m.max }, (_, i) => `<i class="${i < lv ? 'on' : ''}"></i>`).join('')}</div></div>
+      <button ${next === null || SAVE.gloria < next ? 'disabled' : ''} class="${next !== null && SAVE.gloria >= next ? 'primary' : ''}">${next === null ? 'Máximo' : next + ' Gloria'}</button>`;
+    d.querySelector('button').onclick = () => { if (next !== null && SAVE.gloria >= next) { SAVE.gloria -= next; SAVE.meta[m.id] = lv + 1; persist(); Sound.play('coin'); renderMeta(); } };
+    box.appendChild(d);
+  });
+}
+/* ---------- LOGROS ---------- */
+function renderAch() {
+  const box = $('achs'); box.innerHTML = '';
+  ACHIEVEMENTS.forEach(a => {
+    const on = !!SAVE.achievements[a.id];
+    const d = document.createElement('div'); d.className = 'card' + (on ? '' : ' off');
+    d.innerHTML = `<span class="tag">+${a.gloria} Gloria</span><h3>${on ? '🏅 ' : ''}${a.name}</h3><p>${a.desc}</p>`; box.appendChild(d);
+  });
+}
+/* ---------- BESTIARIO ---------- */
+function renderCodex() {
+  const box = $('codex'); box.innerHTML = '';
+  Object.entries(ENEMIES).forEach(([k, e]) => {
+    const seen = !!SAVE.codex[k];
+    const d = document.createElement('div'); d.className = 'card' + (seen ? '' : ' off');
+    if (seen) {
+      const tags = []; if (e.flying) tags.push('Volador'); if (e.armor) tags.push(`Armadura ${Math.round(e.armor * 100)}%`); if (e.mres) tags.push(`Res. mágica ${Math.round(e.mres * 100)}%`); if (e.regen) tags.push('Regenera'); if (e.heal) tags.push('Sana'); if (e.onDeath) tags.push('Invoca al morir'); if (e.summon) tags.push('Invoca'); if (e.boss) tags.push('Jefe');
+      d.innerHTML = `<h3>${e.name}</h3><p>${e.lore}</p><p style="color:var(--gold)">${tags.join(' · ') || 'Sin rasgos especiales'} · Vida ${e.hp} · ${e.dmg} ♥</p>`;
+      d.insertBefore(enemyIcon(k, 48), d.firstChild);
+    } else d.innerHTML = `<h3>???</h3><p>Aún no te has enfrentado a esta criatura.</p>`;
+    box.appendChild(d);
+  });
+  const tb = $('codex-towers'); tb.innerHTML = '';
+  TOWER_ORDER.forEach(k => {
+    const t = TOWERS[k]; const on = SAVE.unlocked.towers.includes(k);
+    const d = document.createElement('div'); d.className = 'card' + (on ? '' : ' off');
+    d.innerHTML = `<h3>${t.name}</h3><p>${t.desc}</p><p style="color:var(--gold)">Ramas: ${t.specs.map(s => s.name).join(' / ')}</p>` + (on ? '' : '<p>Bloqueada: se desbloquea avanzando en la campaña.</p>');
+    d.insertBefore(towerIcon(k, 48), d.firstChild);
+    tb.appendChild(d);
+  });
+}
+
+/* ---------- PARTIDA ---------- */
+function startLevel(level, diff) {
+  currentLevel = level; currentDiff = diff;
+  game = new Game(level, diff, $('game'));
+  window.__game = game;
+  showScreen('s-game'); buildPanel(); spellPanel(); renderHUD(); renderInfo();
+  lastTs = performance.now();
+  if (rafId) cancelAnimationFrame(rafId);
+  rafId = requestAnimationFrame(loop);
+}
+function loop(ts) {
+  rafId = requestAnimationFrame(loop);
+  if (!game) return;
+  let dt = Math.min(0.1, (ts - lastTs) / 1000); lastTs = ts;
+  if (!$('s-game').classList.contains('active')) return;
+  let total = dt * game.speed;
+  while (total > 0) { const step = Math.min(1 / 60, total); game.update(step); total -= step; }
+  game.render();
+  if (game.uiDirty) { game.uiDirty = false; renderHUD(); renderInfo(); }
+  else updateCooldownBars();
+}
+function buildPanel() {
+  const box = $('build'); box.innerHTML = '';
+  TOWER_ORDER.forEach(k => {
+    const t = TOWERS[k]; const on = SAVE.unlocked.towers.includes(k);
+    const d = document.createElement('div'); d.className = 'tb' + (on ? '' : ' locked'); d.dataset.type = k;
+    d.title = on ? `${t.name}\n${t.desc}` : `${t.name} (bloqueada)`;
+    d.innerHTML = `<span class="k">${t.key}</span>`; d.appendChild(towerIcon(k, 30));
+    const cc = document.createElement('div'); cc.className = 'c'; cc.textContent = on ? game.towerCost(k) : '🔒'; d.appendChild(cc);
+    if (on) d.onclick = () => selectBuild(k);
+    box.appendChild(d);
+  });
+}
+function selectBuild(k) {
+  if (!game || game.over) return;
+  game.spellMode = null;
+  game.buildType = game.buildType === k ? null : k; game.selected = null; game.uiDirty = true; Sound.play('click');
+}
+function spellPanel() {
+  const box = $('spells'); box.innerHTML = '';
+  SPELL_ORDER.forEach(k => {
+    const s = SPELLS[k]; const on = SAVE.unlocked.spells.includes(k);
+    const d = document.createElement('div'); d.className = 'sp' + (on ? '' : ' locked'); d.dataset.spell = k;
+    d.title = on ? `${s.name} (${s.key})\n${s.desc}\nRecarga: ${Math.round(s.cd * (1 - 0.1 * metaLvl('hechiceria')))} s` : `${s.name} (bloqueado)`;
+    d.innerHTML = `<div class="cd"></div><div class="ico">${k === 'lluvia' ? '🏹' : k === 'escarcha' ? '❄️' : '☄️'}</div>${s.key}`;
+    if (on) d.onclick = () => selectSpell(k);
+    box.appendChild(d);
+  });
+}
+function selectSpell(k) {
+  if (!game || game.over || !SAVE.unlocked.spells.includes(k)) return;
+  if (game.cooldowns[k] > 0) { game.msg('Hechizo en recarga.', '#ff8a7a'); return; }
+  if (k === 'escarcha') { game.castSpell(k); return; }
+  game.buildType = null; game.selected = null;
+  game.spellMode = game.spellMode === k ? null : k; game.uiDirty = true; Sound.play('click');
+}
+function updateCooldownBars() {
+  document.querySelectorAll('.sp').forEach(el => {
+    const k = el.dataset.spell; const s = SPELLS[k]; const cd = game.cooldowns[k];
+    const maxCd = s.cd * (1 - 0.1 * metaLvl('hechiceria'));
+    el.querySelector('.cd').style.width = cd > 0 ? (cd / maxCd * 100) + '%' : '0';
+    el.style.opacity = SAVE.unlocked.spells.includes(k) ? (cd > 0 ? 0.6 : 1) : 0.35;
+  });
+}
+function renderHUD() {
+  $('h-gold').textContent = fmt(game.gold); $('h-lives').textContent = game.lives + '/' + game.maxLives;
+  $('h-wave').textContent = game.wave + (game.level.waves === Infinity ? '' : '/' + game.level.waves);
+  $('b-next').disabled = game.over || (game.waveActive && game.level.waves !== Infinity && game.wave >= game.level.waves) || (game.waveActive && game.spawnQueue.length > 0);
+  $('b-next').textContent = game.waveActive ? 'Oleada en curso' : game.countdown > 0 ? `Adelantar (+${Math.round(game.countdown * 2.5)} oro)` : 'Siguiente oleada';
+  ['sp1', 'sp2', 'sp3'].forEach((id, i) => $(id).classList.toggle('sel', game.speed === i + 1));
+  $('b-pause').textContent = game.paused ? 'Reanudar' : 'Pausa';
+  document.querySelectorAll('.tb').forEach(el => {
+    const k = el.dataset.type; el.classList.toggle('sel', game.buildType === k);
+    if (SAVE.unlocked.towers.includes(k)) el.classList.toggle('poor', game.gold < game.towerCost(k));
+  });
+  document.querySelectorAll('.sp').forEach(el => el.classList.toggle('sel', game.spellMode === el.dataset.spell));
+  updateCooldownBars();
+  $('log').innerHTML = game.log.map(l => `<div style="color:${l.color}">${l.txt}</div>`).join('');
+}
+function renderInfo() {
+  const box = $('info');
+  if (game.spellMode) {
+    const s = SPELLS[game.spellMode];
+    box.innerHTML = `<h3>${s.name}</h3><div class="desc">${s.desc}</div><div class="tip">Haz clic en el mapa para lanzarlo. Esc para cancelar.</div>`; return;
+  }
+  if (game.buildType) {
+    const t = TOWERS[game.buildType]; const l = t.levels[0];
+    box.innerHTML = `<h3>${t.name}</h3><div class="desc">${t.desc}</div><div class="stats">
+      <span>Coste</span><b style="color:var(--gold)">${game.towerCost(game.buildType)}</b>
+      ${t.dmgType !== 'none' ? `<span>Daño</span><b>${Math.round(l.dmg)} ${t.dmgType === 'magic' ? 'mágico' : 'físico'}</b><span>Cadencia</span><b>${l.rate}/s</b>` : `<span>Bendición</span><b>+${Math.round(l.buffDmg * 100)}% daño</b>`}
+      <span>Alcance</span><b>${Math.round(l.range)}</b><span>Objetivos</span><b>${t.target === 'both' ? 'Tierra y aire' : t.target === 'ground' ? 'Solo tierra' : 'Torres cercanas'}</b></div>
+      <div class="tip">Haz clic en una casilla libre para construir. Clic derecho o Esc para cancelar.</div>`; return;
+  }
+  const t = game.selected;
+  if (!t || !game.towers.includes(t)) {
+    let preview = '';
+    const nextW = game.waveActive ? game.wave + 1 : game.wave + 1;
+    if (game.level.waves === Infinity || nextW <= game.level.waves) {
+      const groups = genWave(game.level, nextW); const counts = {};
+      groups.forEach(gp => counts[gp.type] = (counts[gp.type] || 0) + gp.count);
+      preview = `<div class="section-title" style="margin-top:6px">${game.waveActive ? 'Después: oleada ' + nextW : 'Próxima oleada ' + nextW}</div><div class="tip">` +
+        Object.entries(counts).map(([k, n]) => { const e = ENEMIES[k]; const tags = []; if (e.flying) tags.push('vuela'); if (e.armor >= 0.3) tags.push('acorazado'); if (e.mres >= 0.4) tags.push('res. magia'); if (e.boss) tags.push('JEFE'); return `<b style="color:${e.boss ? 'var(--red)' : 'var(--text)'}">${n}× ${e.name}</b>${tags.length ? ' <i>(' + tags.join(', ') + ')</i>' : ''}`; }).join('<br>') + '</div>';
+    }
+    box.innerHTML = `<h3>${game.level.name}</h3><div class="desc">${DIFFS[game.diffKey].name}. Elige una torre para construirla o haz clic en una torre del mapa para mejorarla.</div>
+      <div class="stats"><span>Enemigos</span><b>${game.enemies.length}</b><span>Torres</span><b>${game.towers.length}</b><span>Bajas</span><b>${game.stats.kills}</b><span>Oro ganado</span><b>${fmt(game.stats.goldEarned)}</b></div>${preview}`;
+    return;
+  }
+  const def = TOWERS[t.type]; const s = game.stat(t);
+  const modes = ['Primero', 'Último', 'Más fuerte', 'Más débil'];
+  const maxLvl = t.lvl >= def.levels.length - 1;
+  let html = `<h3>${t.spec >= 0 ? def.specs[t.spec].name : def.name} <small style="color:var(--muted)">Nv. ${t.lvl + 1}${t.spec >= 0 ? '★' : ''}</small></h3>
+    <div class="desc">${t.spec >= 0 ? def.specs[t.spec].desc : def.desc}</div><div class="stats">`;
+  if (def.dmgType !== 'none') html += `<span>Daño</span><b>${Math.round(s.dmg)}${s.aura ? '/s' : ''} ${def.dmgType === 'magic' ? 'mág.' : 'fís.'}</b><span>Cadencia</span><b>${s.aura ? 'Aura' : s.rate.toFixed(1) + '/s'}</b>`;
+  else html += `<span>Bendición</span><b>+${Math.round(s.buffDmg * 100)}% daño, +${Math.round(s.buffRange * 100)}% alc.</b>`;
+  html += `<span>Alcance</span><b>${Math.round(s.range)}</b>`;
+  if (s.splash) html += `<span>Área</span><b>${Math.round(s.splash)}</b>`;
+  if (s.slow) html += `<span>Ralentiza</span><b>${Math.round(s.slow * 100)}%</b>`;
+  if (s.poison) html += `<span>Veneno</span><b>${Math.round(s.poison)}/s · ${s.poisonT}s</b>`;
+  if (s.burn) html += `<span>Quemadura</span><b>${Math.round(s.burn)}/s</b>`;
+  if (s.pierce) html += `<span>Perfora</span><b>${Math.round(s.pierce * 100)}%</b>`;
+  if (s.crit) html += `<span>Crítico</span><b>${Math.round(s.crit * 100)}% (x3)</b>`;
+  if (s.chain) html += `<span>Cadena</span><b>${s.chain} objetivos</b>`;
+  if (s.multishot) html += `<span>Flechas</span><b>${s.multishot}</b>`;
+  if (t.buffDmg) html += `<span>Bendecida</span><b style="color:var(--gold)">+${Math.round(t.buffDmg * 100)}% daño</b>`;
+  html += `<span>Bajas</span><b>${t.kills}</b><span>Daño total</span><b>${fmt(t.dmgDone)}</b></div><div class="acts">`;
+  if (def.dmgType !== 'none') html += `<button id="i-target">Objetivo: ${modes[t.targetMode]} <small>T</small></button>`;
+  if (!maxLvl) {
+    const nl = def.levels[t.lvl + 1]; const cost = game.upgradeCost(nl.cost);
+    html += `<button id="i-up" class="${game.gold < cost ? 'poor' : ''}">Mejorar a nivel ${t.lvl + 2} <small>${cost} oro · U</small><span class="spec-desc">${def.dmgType !== 'none' ? `Daño ${Math.round(nl.dmg)}, alcance ${nl.range}` : `+${Math.round(nl.buffDmg * 100)}% daño`}</span></button>`;
+  } else if (t.spec < 0) {
+    def.specs.forEach((sp, i) => { const cost = game.upgradeCost(sp.cost); html += `<button data-spec="${i}" class="${game.gold < cost ? 'poor' : ''}">★ ${sp.name} <small>${cost} oro</small><span class="spec-desc">${sp.desc}</span></button>`; });
+  }
+  html += `<button id="i-sell" class="danger">Vender <small>+${game.sellValue(t)} oro · S</small></button></div>`;
+  box.innerHTML = html;
+  const up = $('i-up'); if (up) up.onclick = () => game.upgrade(t);
+  const sl = $('i-sell'); if (sl) sl.onclick = () => game.sell(t);
+  const tg = $('i-target'); if (tg) tg.onclick = () => { t.targetMode = (t.targetMode + 1) % 4; game.uiDirty = true; };
+  box.querySelectorAll('[data-spec]').forEach(b => b.onclick = () => game.specialize(t, +b.dataset.spec));
+}
+
+/* ---------- FIN DE PARTIDA ---------- */
+function onGameOver(g, won) {
+  const level = g.level; const endless = level.id === 99;
+  let html = '', gained = 0, unlocks = [];
+  if (endless) {
+    const best = SAVE.stats.bestEndless; persist();
+    html = `<h2>El asedio termina</h2><div class="sub">Has resistido ${g.wave - (g.waveActive ? 1 : 0)} oleadas${best === g.wave ? ' · ¡Nueva marca!' : ' · Mejor marca: ' + best}</div>`;
+  } else if (won) {
+    const frac = g.lives / g.maxLives;
+    const stars = STAR_RULES.find(r => frac >= r.min).stars;
+    const prev = SAVE.stars[level.id] || 0;
+    if (stars > prev) { gained += stars - prev; SAVE.stars[level.id] = stars; }
+    if (g.diffKey !== 'normal') { SAVE.diffDone[level.id] = SAVE.diffDone[level.id] || {}; if (!SAVE.diffDone[level.id][g.diffKey]) { SAVE.diffDone[level.id][g.diffKey] = true; gained += DIFFS[g.diffKey].bonus; } }
+    const u = level.unlock;
+    if (u.tower && !SAVE.unlocked.towers.includes(u.tower)) { SAVE.unlocked.towers.push(u.tower); unlocks.push('Nueva torre: <b>' + TOWERS[u.tower].name + '</b>'); }
+    if (u.spell && !SAVE.unlocked.spells.includes(u.spell)) { SAVE.unlocked.spells.push(u.spell); unlocks.push('Nuevo hechizo: <b>' + SPELLS[u.spell].name + '</b>'); }
+    if (u.endless && !SAVE.unlocked.endless) { SAVE.unlocked.endless = true; SAVE.unlocked.pesadilla = true; unlocks.push('Modo <b>Asedio infinito</b> y dificultad <b>Pesadilla</b>'); }
+    SAVE.gloria += gained; SAVE.stats.gloriaTotal += gained; persist();
+    if (g.stats.livesLost === 0) unlockAchievement('sin_fisuras');
+    if (g.stats.types.size >= 7) unlockAchievement('coleccionista');
+    if (level.id === 10) unlockAchievement('heroe');
+    if (g.diffKey === 'pesadilla') unlockAchievement('pesadilla');
+    if (totalStars() >= 30) unlockAchievement('estrellas');
+    html = `<h2>¡Victoria!</h2><div class="sub">Capítulo ${level.id}: ${level.name} · ${DIFFS[g.diffKey].name}</div><div class="big-stars">${starsHtml(stars)}</div>`;
+    html += level.story.outro.map(p => `<p>${p}</p>`).join('');
+    if (unlocks.length || gained) html += `<ul>${unlocks.map(x => `<li>${x}</li>`).join('')}${gained ? `<li>Gloria obtenida: <b>+${gained}</b></li>` : ''}</ul>`;
+  } else {
+    html = `<h2>Derrota</h2><div class="sub">La muralla ha caído en la oleada ${g.wave} de ${level.waves}.</div><p>Los viejos soldados dicen que una derrota enseña más que diez victorias. Revisa qué enemigos han cruzado: ¿acorazados? Usa magos. ¿Voladores? Arqueros y ballestas. ¿Demasiado rápidos? Hielo.</p>`;
+  }
+  html += `<div class="kv"><span>Enemigos abatidos</span><b>${g.stats.kills}</b><span>Torres construidas</span><b>${g.stats.towersBuilt}</b><span>Oro ganado</span><b>${fmt(g.stats.goldEarned)}</b><span>Hechizos lanzados</span><b>${g.stats.spells}</b><span>Vidas perdidas</span><b>${g.stats.livesLost}</b><span>Oleadas adelantadas</span><b>${g.stats.early}</b></div>`;
+  const next = !endless && won && LEVELS.find(l => l.id === level.id + 1);
+  html += `<div class="btns"><button id="r-menu">Campaña</button><button id="r-retry">${endless ? 'Otro asedio' : 'Repetir'}</button>${next ? `<button class="primary" id="r-next">Capítulo ${next.id}: ${next.name} →</button>` : ''}</div>`;
+  setTimeout(() => {
+    modal(html);
+    $('r-menu').onclick = () => { closeModal(); quitGame(); };
+    $('r-retry').onclick = () => { closeModal(); openStory(level, g.diffKey); };
+    if (next) $('r-next').onclick = () => { closeModal(); openStory(next, g.diffKey); };
+  }, won ? 900 : 1200);
+}
+function quitGame() {
+  game = null; window.__game = null; renderCampaign(); showScreen('s-campaign'); renderMenu();
+}
+
+/* ---------- ENTRADA ---------- */
+function canvasPos(ev) {
+  const cv = $('game'); const rect = cv.getBoundingClientRect();
+  const x = (ev.clientX - rect.left) * (W / rect.width), y = (ev.clientY - rect.top) * (H / rect.height);
+  return { x, y, c: Math.floor(x / TILE), r: Math.floor(y / TILE) };
+}
+function bindInput() {
+  const cv = $('game');
+  cv.addEventListener('mousemove', ev => { if (game) game.hover = canvasPos(ev); });
+  cv.addEventListener('mouseleave', () => { if (game) game.hover = null; });
+  cv.addEventListener('contextmenu', ev => { ev.preventDefault(); if (game) { game.buildType = null; game.spellMode = null; game.selected = null; game.uiDirty = true; } });
+  cv.addEventListener('click', ev => {
+    if (!game || game.over) return;
+    const p = canvasPos(ev);
+    if (game.spellMode) { game.castSpell(game.spellMode, p.x, p.y); return; }
+    if (game.buildType) {
+      if (game.build(game.buildType, p.c, p.r)) { if (!ev.shiftKey) game.buildType = null; else game.selected = null; game.uiDirty = true; }
+      return;
+    }
+    const t = game.towers.find(t => t.c === p.c && t.r === p.r);
+    game.selected = t || null; game.uiDirty = true; if (t) Sound.play('click');
+  });
+  $('b-next').onclick = () => { if (game && !game.waveActive) game.startWave(game.countdown > 0); };
+  $('sp1').onclick = () => { game.speed = 1; game.uiDirty = true; };
+  $('sp2').onclick = () => { game.speed = 2; game.uiDirty = true; };
+  $('sp3').onclick = () => { game.speed = 3; game.uiDirty = true; };
+  $('b-pause').onclick = () => { if (game && !game.over) { game.paused = !game.paused; game.uiDirty = true; } };
+  $('b-quit').onclick = () => {
+    if (!game) return; game.paused = true;
+    modal(`<h2>¿Abandonar el capítulo?</h2><p>Perderás el progreso de esta partida (las estrellas, la Gloria y los desbloqueos ya obtenidos se conservan).</p><div class="btns"><button id="q-no">Seguir luchando</button><button class="danger" id="q-yes">Abandonar</button></div>`);
+    $('q-no').onclick = () => { closeModal(); game.paused = false; game.uiDirty = true; };
+    $('q-yes').onclick = () => { closeModal(); quitGame(); };
+  };
+  window.addEventListener('keydown', ev => {
+    if (!game || !$('s-game').classList.contains('active') || $('modal').classList.contains('active')) return;
+    const k = ev.key.toLowerCase();
+    if (k === ' ') { ev.preventDefault(); if (!game.waveActive) game.startWave(game.countdown > 0); }
+    else if (k === 'escape') { if (game.buildType || game.spellMode || game.selected) { game.buildType = null; game.spellMode = null; game.selected = null; game.uiDirty = true; } else if (game.paused) { game.paused = false; game.uiDirty = true; } }
+    else if (k === 'p') { game.paused = !game.paused; game.uiDirty = true; }
+    else if (k >= '1' && k <= '7') { const t = TOWER_ORDER[+k - 1]; if (SAVE.unlocked.towers.includes(t)) selectBuild(t); }
+    else if (k === 'q') selectSpell('lluvia'); else if (k === 'w') selectSpell('escarcha'); else if (k === 'e') selectSpell('meteoro');
+    else if (k === 'u' && game.selected) game.upgrade(game.selected);
+    else if (k === 's' && game.selected) game.sell(game.selected);
+    else if (k === 't' && game.selected) { game.selected.targetMode = (game.selected.targetMode + 1) % 4; game.uiDirty = true; }
+    else if (k === '+' || k === '.') { game.speed = Math.min(3, game.speed + 1); game.uiDirty = true; }
+    else if (k === '-' || k === ',') { game.speed = Math.max(1, game.speed - 1); game.uiDirty = true; }
+  });
+}
+
+/* ---------- INICIO ---------- */
+function init() {
+  loadSave(); drawCrest(); renderMenu(); bindInput();
+  $('b-campaign').onclick = () => { renderCampaign(); showScreen('s-campaign'); };
+  $('b-endless').onclick = () => { if (SAVE.unlocked.endless) openStory(ENDLESS, currentDiff); };
+  $('b-meta').onclick = () => { renderMeta(); showScreen('s-meta'); };
+  $('b-ach').onclick = () => { renderAch(); showScreen('s-ach'); };
+  $('b-codex').onclick = () => { renderCodex(); showScreen('s-codex'); };
+  $('b-sound').onclick = () => { SAVE.settings.sound = !SAVE.settings.sound; persist(); renderMenu(); Sound.play('click'); };
+  $('b-reset').onclick = () => {
+    modal(`<h2>¿Borrar todo el progreso?</h2><p>Se perderán estrellas, Gloria, mejoras, logros y bestiario. Esta acción no se puede deshacer.</p><div class="btns"><button id="q-no">Cancelar</button><button class="danger" id="q-yes">Borrar</button></div>`);
+    $('q-no').onclick = closeModal;
+    $('q-yes').onclick = () => { localStorage.removeItem(SAVE_KEY); SAVE = DEFAULT_SAVE(); closeModal(); renderMenu(); };
+  };
+  ['back-1', 'back-2', 'back-3', 'back-4'].forEach(id => $(id).onclick = () => { renderMenu(); showScreen('s-menu'); });
+}
+init();
+
+</script>
+</body>
+</html>
