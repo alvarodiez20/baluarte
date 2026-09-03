@@ -8,7 +8,7 @@ El repositorio ya incluye el workflow `.github/workflows/pages.yml`, que publica
 
 1. Ve a **Settings → Pages** del repositorio.
 2. En *Build and deployment → Source* elige **GitHub Actions**.
-3. Haz push a `main` (o lanza el workflow a mano desde la pestaña **Actions → Deploy to GitHub Pages → Run workflow**).
+3. Lanza el despliegue: pestaña **Actions → Deploy to GitHub Pages → Run workflow** (o haz un push nuevo).
 4. En uno o dos minutos el juego estará en `https://alvarodiez20.github.io/baluarte/`.
 
 Alternativa sin Actions: en *Source* elige **Deploy from a branch**, rama `main`, carpeta `/ (root)` y pulsa **Save**. El archivo `.nojekyll` evita que Jekyll procese los archivos.
