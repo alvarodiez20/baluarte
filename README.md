@@ -126,6 +126,8 @@ cambias la estructura de datos, súbele la versión para no leer partidas incomp
 
 ## Compatibilidad
 
-Navegadores de escritorio modernos (Chrome, Firefox, Edge, Safari). El lienzo está pensado
-para una anchura de 1280 px y el control es de teclado y ratón, así que no está adaptado a
-móvil.
+Navegadores de escritorio modernos (Chrome, Firefox, Edge, Safari). La partida se escala
+para caber siempre en la ventana, sin recortes ni scroll: en pantallas grandes se amplía
+hasta 2×, y en ventanas estrechas —media pantalla, por ejemplo— el panel lateral pasa
+debajo del tablero para aprovechar el alto. El control es de teclado y ratón, así que no
+está adaptado a móvil.

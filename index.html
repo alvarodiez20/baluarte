@@ -2,9 +2,10 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=1280">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="description" content="Baluarte: juego de defensa de torres medieval. Campaña con historia, 7 torres, mejoras permanentes y asedio infinito.">
 <title>Baluarte</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 90 90'%3E%3Cpath d='M45 4 84 17 78 57 45 88 12 57 6 17Z' fill='%23c9a227'/%3E%3Cpath d='M45 12 77 23 72 54 45 79 18 54 13 23Z' fill='%233a2a10'/%3E%3Cpath d='M30 40h30v27H30z' fill='%23e8e0c8'/%3E%3Cpath d='M30 32h5v9h-5zm8 0h5v9h-5zm8 0h5v9h-5zm8 0h5v9h-5z' fill='%23e8e0c8'/%3E%3Cpath d='M41 52h8v15h-8z' fill='%237a3030'/%3E%3C/svg%3E">
 <style>
 :root {
   --bg: #1b1710; --panel: #2a241a; --panel2: #352d20; --line: #4a4030; --text: #efe6cf; --muted: #b3a88e;
@@ -24,21 +25,22 @@ h1, h2, h3 { font-family: Georgia, 'Times New Roman', serif; margin: 0; }
 .screen { display: none; position: absolute; inset: 0; overflow: auto; }
 .screen.active { display: block; }
 .center { max-width: 1100px; margin: 0 auto; padding: 32px 24px; }
+@media (max-width: 700px) { .center { padding: 20px 14px; } }
 /* ----- menú ----- */
 #s-menu .center { text-align: center; padding-top: 70px; }
-.title { font-size: 72px; letter-spacing: 6px; color: var(--gold); text-shadow: 0 4px 0 #6a4a10, 0 8px 24px rgba(0,0,0,.6); }
+.title { font-size: clamp(40px, 9vw, 72px); letter-spacing: 6px; color: var(--gold); text-shadow: 0 4px 0 #6a4a10, 0 8px 24px rgba(0,0,0,.6); }
 .subtitle { color: var(--muted); font-style: italic; font-size: 18px; margin-top: 6px; margin-bottom: 40px; }
 .menu-btns { display: flex; flex-direction: column; gap: 10px; width: 300px; margin: 0 auto; }
 .menu-btns button { font-size: 17px; padding: 12px; }
 .menu-stats { color: var(--muted); margin-top: 30px; font-size: 14px; }
 .crest { width: 90px; height: 90px; margin: 0 auto 10px; }
 /* ----- cabeceras ----- */
-.top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+.top { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
 .top h2 { font-size: 30px; color: var(--gold); }
 .pill { background: var(--panel); border: 1px solid var(--line); border-radius: 20px; padding: 4px 12px; font-size: 13px; color: var(--muted); }
 .pill b { color: var(--gold); }
 /* ----- campaña ----- */
-.levels { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 12px; }
+.levels { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr)); gap: 12px; }
 .lvl { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px; cursor: pointer; position: relative; transition: transform .1s, border-color .1s; }
 .lvl:hover { transform: translateY(-2px); border-color: var(--accent); }
 .lvl.locked { opacity: .45; cursor: not-allowed; }
@@ -52,7 +54,7 @@ h1, h2, h3 { font-family: Georgia, 'Times New Roman', serif; margin: 0; }
 .diffs { display: flex; gap: 8px; }
 .diffs button.sel { background: var(--accent); color: #1b1710; font-weight: 700; }
 /* ----- mejoras ----- */
-.metas { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }
+.metas { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr)); gap: 12px; }
 .meta { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px; display: flex; gap: 12px; align-items: center; }
 .meta .ico { font-size: 28px; width: 40px; text-align: center; }
 .meta .body { flex: 1; }
@@ -62,7 +64,7 @@ h1, h2, h3 { font-family: Georgia, 'Times New Roman', serif; margin: 0; }
 .meta .lv i { display: block; width: 22px; height: 8px; border-radius: 3px; background: #4a4030; }
 .meta .lv i.on { background: var(--gold); }
 /* ----- logros y bestiario ----- */
-.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; }
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(260px, 100%), 1fr)); gap: 10px; }
 .card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px; }
 .card.off { opacity: .4; }
 .card h3 { font-size: 16px; }
@@ -71,10 +73,38 @@ h1, h2, h3 { font-family: Georgia, 'Times New Roman', serif; margin: 0; }
 .card canvas { float: right; margin-left: 8px; }
 /* ----- partida ----- */
 #s-game { display: none; }
-#s-game.active { display: flex; align-items: flex-start; justify-content: center; padding: 10px; gap: 10px; overflow: auto; }
-#wrap { display: flex; gap: 10px; }
-#game { background: #000; border: 2px solid #4a4030; border-radius: 6px; cursor: crosshair; display: block; }
-#side { width: 300px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 10px; display: flex; flex-direction: column; gap: 10px; min-height: 604px; }
+/* La partida se escala para caber siempre en la ventana: #wrap conserva su
+   tamaño natural (1274x604) y se ajusta con transform, así que el juego nunca
+   desborda ni queda recortado por los lados. */
+#s-game.active { display: block; overflow: hidden; }
+#wrap { position: absolute; top: 50%; left: 50%; display: flex; gap: 10px;
+  transform: translate(-50%, -50%) scale(var(--gs, 1)); transform-origin: 50% 50%; }
+/* En ventanas altas y estrechas el panel pasa debajo del tablero: así el
+   tablero puede escalarse mucho más que con el panel al lado. */
+#wrap.stack { flex-direction: column; align-items: center; }
+/* Las áreas se asignan por posición: el orden de los hijos de #side es
+   hud, controles, controles, construir, hechizos, info, registro. */
+#wrap.stack #side {
+  width: 964px; height: 280px; display: grid; gap: 8px;
+  grid-template-columns: 232px 264px 1fr;
+  grid-template-rows: auto auto 1fr;
+  grid-template-areas: "hud build info" "ctrl1 build info" "ctrl2 spells info";
+}
+#wrap.stack #side > :nth-child(1) { grid-area: hud; }
+#wrap.stack #side > :nth-child(2) { grid-area: ctrl1; }
+#wrap.stack #side > :nth-child(3) { grid-area: ctrl2; }
+#wrap.stack #side > :nth-child(4) { grid-area: build; }
+#wrap.stack #side > :nth-child(5) { grid-area: spells; }
+#wrap.stack #side > :nth-child(6) { grid-area: info; }
+#wrap.stack #side > :nth-child(3), #wrap.stack #side > :nth-child(5) { align-self: start; }
+#wrap.stack .hud { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+#wrap.stack .hud div { padding: 5px 4px; }
+#wrap.stack .hud .v { font-size: 17px; }
+#wrap.stack .hud .l { font-size: 10px; letter-spacing: 0; }
+#wrap.stack #info { height: auto; min-height: 0; }
+#wrap.stack #log { display: none; }
+#game { width: 960px; height: 600px; background: #000; border: 2px solid #4a4030; border-radius: 6px; cursor: crosshair; display: block; }
+#side { width: 300px; height: 604px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 10px; display: flex; flex-direction: column; gap: 10px; }
 .hud { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
 .hud div { background: var(--panel2); border-radius: 6px; padding: 6px 8px; text-align: center; }
 .hud .v { font-size: 20px; font-weight: 700; }
@@ -227,11 +257,11 @@ kbd { background: #111; border: 1px solid #555; border-radius: 4px; padding: 1px
           <button id="sp1" class="sel">1×</button><button id="sp2">2×</button><button id="sp3">3×</button>
         </div>
         <div class="ctrl"><button id="b-pause">Pausa</button><button id="b-quit">Abandonar</button></div>
-        <div>
+        <div class="grp grp-build">
           <div class="section-title">Construir</div>
           <div class="build" id="build"></div>
         </div>
-        <div>
+        <div class="grp grp-spells">
           <div class="section-title">Hechizos</div>
           <div class="spells" id="spells"></div>
         </div>
@@ -249,6 +279,9 @@ kbd { background: #111; border: 1px solid #555; border-radius: 4px; padding: 1px
 /* ==================== DATOS DEL JUEGO ==================== */
 const COLS = 24, ROWS = 15, TILE = 40;
 const W = COLS * TILE, H = ROWS * TILE;
+/* Píxeles reales por unidad lógica del tablero. Lo fija fitGame() según el
+   tamaño de la ventana y la densidad de la pantalla. */
+let renderScale = 1;
 
 function mulberry32(a) {
   return function () {
@@ -724,9 +757,10 @@ function buildMap(level) {
   return { grid, paths, decor };
 }
 
-function renderMapCache(level, map) {
-  const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
-  const g = cv.getContext('2d');
+function renderMapCache(level, map, scale) {
+  const k = scale || renderScale;
+  const cv = document.createElement('canvas'); cv.width = Math.round(W * k); cv.height = Math.round(H * k);
+  const g = cv.getContext('2d'); g.setTransform(k, 0, 0, k, 0, 0);
   const th = level.theme;
   const rng = mulberry32(level.seed);
   for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
@@ -1182,7 +1216,7 @@ class Game {
   render() {
     const g = this.ctx;
     g.clearRect(0, 0, W, H);
-    g.drawImage(this.mapCache, 0, 0);
+    g.drawImage(this.mapCache, 0, 0, W, H);
     // marcas de entrada/salida
     this.map.paths.forEach(p => {
       const a = p.pts[0];
@@ -1409,6 +1443,32 @@ function drawEffect(g, f) {
 const $ = id => document.getElementById(id);
 let game = null, currentLevel = null, currentDiff = 'normal', rafId = null, lastTs = 0;
 
+/* ---------- AJUSTE A LA VENTANA ---------- */
+const WRAP_W = 1274, WRAP_H = 604;  // panel al lado: lienzo 964 + hueco 10 + panel 300
+const STACK_W = 964, STACK_H = 894; // panel debajo: lienzo 604 + hueco 10 + panel 280
+const MAX_ZOOM = 2;
+
+function setRenderScale(k) {
+  k = Math.max(1, Math.min(3, k));
+  if (Math.abs(k - renderScale) < 0.02) return;
+  renderScale = k;
+  const cv = $('game');
+  cv.width = Math.round(W * k); cv.height = Math.round(H * k);
+  cv.getContext('2d').setTransform(k, 0, 0, k, 0, 0);
+  if (game) game.mapCache = renderMapCache(game.level, game.map, k);
+}
+
+function fitGame() {
+  const availW = window.innerWidth - 16, availH = window.innerHeight - 16;
+  const beside = Math.min(availW / WRAP_W, availH / WRAP_H);
+  const stacked = Math.min(availW / STACK_W, availH / STACK_H);
+  const useStack = stacked > beside * 1.06; // solo si mejora claramente
+  $('wrap').classList.toggle('stack', useStack);
+  const s = Math.min(useStack ? stacked : beside, MAX_ZOOM);
+  document.documentElement.style.setProperty('--gs', Math.max(0.3, s));
+  setRenderScale(s * (window.devicePixelRatio || 1));
+}
+
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.toggle('active', s.id === id));
   Sound.play('click');
@@ -1548,7 +1608,7 @@ function startLevel(level, diff) {
   currentLevel = level; currentDiff = diff;
   game = new Game(level, diff, $('game'));
   window.__game = game;
-  showScreen('s-game'); buildPanel(); spellPanel(); renderHUD(); renderInfo();
+  showScreen('s-game'); fitGame(); buildPanel(); spellPanel(); renderHUD(); renderInfo();
   lastTs = performance.now();
   if (rafId) cancelAnimationFrame(rafId);
   rafId = requestAnimationFrame(loop);
@@ -1778,6 +1838,7 @@ function bindInput() {
 /* ---------- INICIO ---------- */
 function init() {
   loadSave(); drawCrest(); renderMenu(); bindInput();
+  fitGame(); window.addEventListener('resize', fitGame);
   $('b-campaign').onclick = () => { renderCampaign(); showScreen('s-campaign'); };
   $('b-endless').onclick = () => { if (SAVE.unlocked.endless) openStory(ENDLESS, currentDiff); };
   $('b-meta').onclick = () => { renderMeta(); showScreen('s-meta'); };
