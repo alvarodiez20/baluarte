@@ -4,7 +4,7 @@ Juego de defensa de torres (tower defense) medieval en un único archivo `index.
 
 ## Publicar en GitHub Pages
 
-El repositorio ya incluye el workflow `.github/workflows/pages.yml`, que publica la raíz del proyecto en cada push a `main`.
+El repositorio ya incluye el workflow `.github/workflows/pages.yml`, que publica la raíz del proyecto en cada push a la rama por defecto.
 
 1. Ve a **Settings → Pages** del repositorio.
 2. En *Build and deployment → Source* elige **GitHub Actions**.
