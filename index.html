@@ -104,10 +104,10 @@ h1, h2, h3 { font-family: Georgia, 'Times New Roman', serif; margin: 0; }
 #wrap.stack #info { height: auto; min-height: 0; }
 #wrap.stack #log { display: none; }
 #game { width: 960px; height: 600px; background: #000; border: 2px solid #4a4030; border-radius: 6px; cursor: crosshair; display: block; }
-#side { width: 300px; height: 604px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 10px; display: flex; flex-direction: column; gap: 10px; }
+#side { width: 300px; height: 604px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
 .hud { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
-.hud div { background: var(--panel2); border-radius: 6px; padding: 6px 8px; text-align: center; }
-.hud .v { font-size: 20px; font-weight: 700; }
+.hud div { background: var(--panel2); border-radius: 6px; padding: 4px 8px; text-align: center; }
+.hud .v { font-size: 18px; font-weight: 700; line-height: 1.2; }
 .hud .l { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; }
 .hud .gold .v { color: var(--gold); } .hud .lives .v { color: var(--red); } .hud .wave .v { color: var(--blue); }
 .ctrl { display: flex; gap: 6px; }
@@ -124,23 +124,33 @@ h1, h2, h3 { font-family: Georgia, 'Times New Roman', serif; margin: 0; }
 .tb .k { position: absolute; top: 1px; left: 3px; font-size: 9px; color: var(--muted); }
 .tb .c { color: var(--gold); }
 .tb.poor .c { color: var(--red); }
-#info { background: var(--panel2); border-radius: 6px; padding: 8px; font-size: 13px; flex: 1; overflow: auto; min-height: 150px; }
-#info h3 { font-size: 16px; color: var(--gold); }
-#info .desc { color: var(--muted); font-size: 12px; margin: 4px 0 6px; }
-#info .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 8px; font-size: 12px; margin-bottom: 6px; }
-#info .stats span { color: var(--muted); }
-#info .acts { display: flex; flex-direction: column; gap: 5px; }
-#info .acts button { text-align: left; padding: 6px 8px; font-size: 12px; }
-#info .acts button small { color: var(--gold); float: right; }
+/* El panel de datos nunca se desplaza: las cifras van en fichas que fluyen
+   en varias líneas y las acciones quedan ancladas abajo, siempre visibles. */
+#info { background: var(--panel2); border-radius: 6px; padding: 8px; font-size: 13px; flex: 1; overflow: hidden; min-height: 150px; display: flex; flex-direction: column; }
+#info h3 { font-size: 15px; color: var(--gold); line-height: 1.2; }
+#info h3 small { font-weight: 400; }
+#info .desc { color: var(--muted); font-size: 11px; line-height: 1.3; margin: 3px 0 5px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+#info .chips { display: flex; flex-wrap: wrap; gap: 3px; margin-bottom: 4px; }
+#info .chip { background: rgba(0,0,0,.28); border-radius: 4px; padding: 1px 5px; font-size: 11px; line-height: 1.45; white-space: nowrap; }
+#info .chip i { color: var(--muted); font-style: normal; }
+#info .chip b { color: var(--text); font-weight: 600; }
+#info .chip.gold b { color: var(--gold); }
+#info .chip.red b { color: var(--red); }
+#info .acts { display: flex; flex-wrap: wrap; gap: 4px; margin-top: auto; }
+#info .acts button { flex: 1 1 auto; text-align: center; padding: 4px 7px; font-size: 11px; line-height: 1.3; white-space: nowrap; }
+#info .acts button small { color: var(--gold); }
 #info .acts button.poor small { color: var(--red); }
-#info .spec-desc { font-size: 11px; color: var(--muted); display: block; margin-top: 2px; }
+#info .acts button.wide { flex-basis: 100%; text-align: left; }
+#info .spec-hint { font-size: 11px; line-height: 1.3; color: var(--muted); margin-top: 4px; min-height: 2.6em;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+#info .spec-hint b { color: var(--gold); font-weight: 600; }
 .spells { display: flex; gap: 6px; }
 .sp { flex: 1; background: var(--panel2); border: 1px solid var(--line); border-radius: 6px; padding: 5px 4px; text-align: center; cursor: pointer; font-size: 11px; position: relative; overflow: hidden; }
 .sp.sel { border-color: var(--gold); background: #4a3f22; }
 .sp.locked { opacity: .35; cursor: not-allowed; }
 .sp .cd { position: absolute; left: 0; bottom: 0; height: 100%; background: rgba(255,255,255,.12); pointer-events: none; }
 .sp .ico { font-size: 18px; }
-#log { font-size: 12px; min-height: 52px; color: var(--muted); }
+#log { font-size: 12px; height: 34px; overflow: hidden; color: var(--muted); }
 #log div { line-height: 1.3; }
 .tip { font-size: 11px; color: var(--muted); }
 /* ----- modal ----- */
@@ -1682,6 +1692,8 @@ function renderHUD() {
   updateCooldownBars();
   $('log').innerHTML = game.log.map(l => `<div style="color:${l.color}">${l.txt}</div>`).join('');
 }
+const chip = (label, value, cls) => `<span class="chip${cls ? ' ' + cls : ''}"><i>${label}</i> <b>${value}</b></span>`;
+
 function renderInfo() {
   const box = $('info');
   if (game.spellMode) {
@@ -1690,57 +1702,80 @@ function renderInfo() {
   }
   if (game.buildType) {
     const t = TOWERS[game.buildType]; const l = t.levels[0];
-    box.innerHTML = `<h3>${t.name}</h3><div class="desc">${t.desc}</div><div class="stats">
-      <span>Coste</span><b style="color:var(--gold)">${game.towerCost(game.buildType)}</b>
-      ${t.dmgType !== 'none' ? `<span>Daño</span><b>${Math.round(l.dmg)} ${t.dmgType === 'magic' ? 'mágico' : 'físico'}</b><span>Cadencia</span><b>${l.rate}/s</b>` : `<span>Bendición</span><b>+${Math.round(l.buffDmg * 100)}% daño</b>`}
-      <span>Alcance</span><b>${Math.round(l.range)}</b><span>Objetivos</span><b>${t.target === 'both' ? 'Tierra y aire' : t.target === 'ground' ? 'Solo tierra' : 'Torres cercanas'}</b></div>
-      <div class="tip">Haz clic en una casilla libre para construir. Clic derecho o Esc para cancelar.</div>`; return;
+    const c = [chip('Coste', game.towerCost(game.buildType), 'gold')];
+    if (t.dmgType !== 'none') { c.push(chip('Daño', `${Math.round(l.dmg)} ${t.dmgType === 'magic' ? 'mág.' : 'fís.'}`)); c.push(chip('Cad.', `${l.rate}/s`)); }
+    else c.push(chip('Bendición', `+${Math.round(l.buffDmg * 100)}%`));
+    c.push(chip('Alc.', Math.round(l.range)));
+    c.push(chip('Obj.', t.target === 'both' ? 'Tierra y aire' : t.target === 'ground' ? 'Solo tierra' : 'Torres'));
+    box.innerHTML = `<h3>${t.name}</h3><div class="desc">${t.desc}</div><div class="chips">${c.join('')}</div>
+      <div class="tip" style="margin-top:auto">Haz clic en una casilla libre para construir. Clic derecho o Esc para cancelar.</div>`; return;
   }
   const t = game.selected;
   if (!t || !game.towers.includes(t)) {
     let preview = '';
-    const nextW = game.waveActive ? game.wave + 1 : game.wave + 1;
+    const nextW = game.wave + 1;
     if (game.level.waves === Infinity || nextW <= game.level.waves) {
       const groups = genWave(game.level, nextW); const counts = {};
       groups.forEach(gp => counts[gp.type] = (counts[gp.type] || 0) + gp.count);
-      preview = `<div class="section-title" style="margin-top:6px">${game.waveActive ? 'Después: oleada ' + nextW : 'Próxima oleada ' + nextW}</div><div class="tip">` +
-        Object.entries(counts).map(([k, n]) => { const e = ENEMIES[k]; const tags = []; if (e.flying) tags.push('vuela'); if (e.armor >= 0.3) tags.push('acorazado'); if (e.mres >= 0.4) tags.push('res. magia'); if (e.boss) tags.push('JEFE'); return `<b style="color:${e.boss ? 'var(--red)' : 'var(--text)'}">${n}× ${e.name}</b>${tags.length ? ' <i>(' + tags.join(', ') + ')</i>' : ''}`; }).join('<br>') + '</div>';
+      preview = `<div class="section-title" style="margin-top:2px">${game.waveActive ? 'Después: oleada ' + nextW : 'Próxima oleada ' + nextW}</div><div class="chips">` +
+        Object.entries(counts).map(([k, n]) => {
+          const e = ENEMIES[k]; const tags = [];
+          if (e.flying) tags.push('vuela'); if (e.armor >= 0.3) tags.push('acorazado'); if (e.mres >= 0.4) tags.push('res. magia');
+          return chip(n + '×', e.name + (tags.length ? ' · ' + tags.join(', ') : ''), e.boss ? 'red' : '');
+        }).join('') + '</div>';
     }
     box.innerHTML = `<h3>${game.level.name}</h3><div class="desc">${DIFFS[game.diffKey].name}. Elige una torre para construirla o haz clic en una torre del mapa para mejorarla.</div>
-      <div class="stats"><span>Enemigos</span><b>${game.enemies.length}</b><span>Torres</span><b>${game.towers.length}</b><span>Bajas</span><b>${game.stats.kills}</b><span>Oro ganado</span><b>${fmt(game.stats.goldEarned)}</b></div>${preview}`;
+      <div class="chips">${chip('Enemigos', game.enemies.length)}${chip('Torres', game.towers.length)}${chip('Bajas', game.stats.kills)}${chip('Oro ganado', fmt(game.stats.goldEarned), 'gold')}</div>${preview}`;
     return;
   }
   const def = TOWERS[t.type]; const s = game.stat(t);
   const modes = ['Primero', 'Último', 'Más fuerte', 'Más débil'];
   const maxLvl = t.lvl >= def.levels.length - 1;
+  const c = [];
+  if (def.dmgType !== 'none') {
+    c.push(chip('Daño', `${Math.round(s.dmg)}${s.aura ? '/s' : ''} ${def.dmgType === 'magic' ? 'mág.' : 'fís.'}`));
+    c.push(chip('Cad.', s.aura ? 'Aura' : s.rate.toFixed(1) + '/s'));
+  } else c.push(chip('Bendición', `+${Math.round(s.buffDmg * 100)}% daño · +${Math.round(s.buffRange * 100)}% alc.`));
+  c.push(chip('Alc.', Math.round(s.range)));
+  if (s.splash) c.push(chip('Área', Math.round(s.splash)));
+  if (s.slow) c.push(chip('Ralent.', Math.round(s.slow * 100) + '%'));
+  if (s.poison) c.push(chip('Veneno', `${Math.round(s.poison)}/s · ${s.poisonT}s`));
+  if (s.burn) c.push(chip('Quema', Math.round(s.burn) + '/s'));
+  if (s.pierce) c.push(chip('Perfora', Math.round(s.pierce * 100) + '%'));
+  if (s.crit) c.push(chip('Crít.', Math.round(s.crit * 100) + '% ×3'));
+  if (s.chain) c.push(chip('Cadena', s.chain));
+  if (s.multishot) c.push(chip('Flechas', s.multishot));
+  if (t.buffDmg) c.push(chip('Bendecida', '+' + Math.round(t.buffDmg * 100) + '%', 'gold'));
+  c.push(chip('Bajas', t.kills));
+  c.push(chip('Daño tot.', fmt(t.dmgDone)));
+  // Al elegir especialización el texto genérico de la torre sobra: manda la
+  // descripción de la rama, que se muestra bajo los botones.
+  const choosing = maxLvl && t.spec < 0;
   let html = `<h3>${t.spec >= 0 ? def.specs[t.spec].name : def.name} <small style="color:var(--muted)">Nv. ${t.lvl + 1}${t.spec >= 0 ? '★' : ''}</small></h3>
-    <div class="desc">${t.spec >= 0 ? def.specs[t.spec].desc : def.desc}</div><div class="stats">`;
-  if (def.dmgType !== 'none') html += `<span>Daño</span><b>${Math.round(s.dmg)}${s.aura ? '/s' : ''} ${def.dmgType === 'magic' ? 'mág.' : 'fís.'}</b><span>Cadencia</span><b>${s.aura ? 'Aura' : s.rate.toFixed(1) + '/s'}</b>`;
-  else html += `<span>Bendición</span><b>+${Math.round(s.buffDmg * 100)}% daño, +${Math.round(s.buffRange * 100)}% alc.</b>`;
-  html += `<span>Alcance</span><b>${Math.round(s.range)}</b>`;
-  if (s.splash) html += `<span>Área</span><b>${Math.round(s.splash)}</b>`;
-  if (s.slow) html += `<span>Ralentiza</span><b>${Math.round(s.slow * 100)}%</b>`;
-  if (s.poison) html += `<span>Veneno</span><b>${Math.round(s.poison)}/s · ${s.poisonT}s</b>`;
-  if (s.burn) html += `<span>Quemadura</span><b>${Math.round(s.burn)}/s</b>`;
-  if (s.pierce) html += `<span>Perfora</span><b>${Math.round(s.pierce * 100)}%</b>`;
-  if (s.crit) html += `<span>Crítico</span><b>${Math.round(s.crit * 100)}% (x3)</b>`;
-  if (s.chain) html += `<span>Cadena</span><b>${s.chain} objetivos</b>`;
-  if (s.multishot) html += `<span>Flechas</span><b>${s.multishot}</b>`;
-  if (t.buffDmg) html += `<span>Bendecida</span><b style="color:var(--gold)">+${Math.round(t.buffDmg * 100)}% daño</b>`;
-  html += `<span>Bajas</span><b>${t.kills}</b><span>Daño total</span><b>${fmt(t.dmgDone)}</b></div><div class="acts">`;
-  if (def.dmgType !== 'none') html += `<button id="i-target">Objetivo: ${modes[t.targetMode]} <small>T</small></button>`;
+    ${choosing ? '' : `<div class="desc">${t.spec >= 0 ? def.specs[t.spec].desc : def.desc}</div>`}<div class="chips">${c.join('')}</div><div class="acts">`;
+  if (def.dmgType !== 'none') html += `<button id="i-target">🎯 ${modes[t.targetMode]} <small>T</small></button>`;
+  html += `<button id="i-sell" class="danger">Vender <small>+${game.sellValue(t)} · S</small></button>`;
+  let hint = '';
   if (!maxLvl) {
     const nl = def.levels[t.lvl + 1]; const cost = game.upgradeCost(nl.cost);
-    html += `<button id="i-up" class="${game.gold < cost ? 'poor' : ''}">Mejorar a nivel ${t.lvl + 2} <small>${cost} oro · U</small><span class="spec-desc">${def.dmgType !== 'none' ? `Daño ${Math.round(nl.dmg)}, alcance ${nl.range}` : `+${Math.round(nl.buffDmg * 100)}% daño`}</span></button>`;
-  } else if (t.spec < 0) {
-    def.specs.forEach((sp, i) => { const cost = game.upgradeCost(sp.cost); html += `<button data-spec="${i}" class="${game.gold < cost ? 'poor' : ''}">★ ${sp.name} <small>${cost} oro</small><span class="spec-desc">${sp.desc}</span></button>`; });
+    const gain = def.dmgType !== 'none' ? `daño ${Math.round(nl.dmg)} · alcance ${nl.range}` : `+${Math.round(nl.buffDmg * 100)}% de daño`;
+    html += `<button id="i-up" class="wide ${game.gold < cost ? 'poor' : ''}">⬆ Nivel ${t.lvl + 2}: ${gain} <small>${cost} oro · U</small></button>`;
+  } else if (choosing) {
+    def.specs.forEach((sp, i) => { const cost = game.upgradeCost(sp.cost); html += `<button data-spec="${i}" class="wide ${game.gold < cost ? 'poor' : ''}">★ ${sp.name} <small>${cost} oro</small></button>`; });
+    hint = `<div class="spec-hint" id="i-hint"><b>${def.specs[0].name}:</b> ${def.specs[0].desc}</div>`;
   }
-  html += `<button id="i-sell" class="danger">Vender <small>+${game.sellValue(t)} oro · S</small></button></div>`;
+  html += `</div>${hint}`;
   box.innerHTML = html;
   const up = $('i-up'); if (up) up.onclick = () => game.upgrade(t);
   const sl = $('i-sell'); if (sl) sl.onclick = () => game.sell(t);
   const tg = $('i-target'); if (tg) tg.onclick = () => { t.targetMode = (t.targetMode + 1) % 4; game.uiDirty = true; };
-  box.querySelectorAll('[data-spec]').forEach(b => b.onclick = () => game.specialize(t, +b.dataset.spec));
+  const hintBox = $('i-hint');
+  box.querySelectorAll('[data-spec]').forEach(b => {
+    const sp = def.specs[+b.dataset.spec];
+    b.onclick = () => game.specialize(t, +b.dataset.spec);
+    // El detalle de cada especialización se muestra en una sola línea compartida.
+    if (hintBox) b.onmouseenter = b.onfocus = () => { hintBox.innerHTML = `<b>${sp.name}:</b> ${sp.desc}`; };
+  });
 }
 
 /* ---------- FIN DE PARTIDA ---------- */
